@@ -1,5 +1,13 @@
 # BarmanMatch — Stato e Percorso
-# Aggiornato: 12 giugno 2026 | Ruolo strategico: ⏸️ CONGELATO (per scelta — strategia del cuneo)
+# Aggiornato: 12 giugno 2026 | Ruolo: MODULO BAD360 (lato venue) + app standalone (lato worker)
+
+## ✅ INTEGRATO IN BAD360 (12/6/2026)
+Il lato venue (locali) di BarmanMatch ora vive DENTRO BAD360 come modulo
+"Staff Match" (`BAD360_SPLIT/barmanmatch.html` + `backend/staff_match.py` +
+agente C7.6 AI Staff Rescue). Stesso algoritmo di matching (40/35/15/10),
+stesso schema Supabase (`BAD360/supabase/staff_match_schema.sql`).
+Questa app standalone resta per il LATO WORKER (i professionisti che cercano
+turni) — si sviluppa quando il lato domanda (locali BAD360) esiste.
 
 ## Cos'è
 Marketplace matching domanda/offerta per staff HoReCa: i locali pubblicano
