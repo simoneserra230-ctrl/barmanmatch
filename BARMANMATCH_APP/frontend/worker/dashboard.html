@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard Lavoratore — BarmanMatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<nav class="app-nav">
+  <a href="../index.html" class="app-nav-brand">BarmanMatch<span id="nav-name">Lavoratore</span></a>
+  <div class="app-nav-right">
+    <button onclick="logout()">Esci</button>
+  </div>
+</nav>
+
+<!-- CONTRACT MODAL -->
+<div class="modal-overlay hidden" id="contract-modal">
+  <div class="modal">
+    <h3>Accetta il turno</h3>
+    <div id="contract-details" style="margin-bottom:1rem;"></div>
+    <div class="contract-box">
+      <h4>Accordo di prestazione</h4>
+      <p>Accettando questo turno, il lavoratore si impegna a:<br>
+      • Presentarsi puntuale nella sede indicata alla data e ora concordate<br>
+      • Eseguire le mansioni del ruolo richiesto con professionalità<br>
+      • Effettuare il check-in digitale all'inizio e alla fine del turno<br>
+      • Non cancellare il turno entro 12h dall'inizio senza giustificato motivo<br>
+      • Rispettare le norme HACCP e sicurezza sul lavoro (D.Lgs. 81/2008)<br>
+      Il compenso sarà erogato entro 24h dalla validazione del turno completato.</p>
+      <div class="contract-accept">
+        <input type="checkbox" id="contract-check">
+        <label for="contract-check">Ho letto e accetto i termini del turno. Comprendo le conseguenze di una cancellazione last-minute o di un no-show sul mio rating.</label>
+      </div>
+    </div>
+    <div id="contract-alert"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem;">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Annulla</button>
+      <button class="btn btn-primary" id="btn-confirm-apply" data-label="Firma e accetta ✓" style="flex:1">Firma e accetta ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- RATING MODAL -->
+<div class="modal-overlay hidden" id="rating-modal">
+  <div class="modal">
+    <h3>Valuta l'esperienza</h3>
+    <div id="rating-info" style="margin-bottom:1rem;font-size:.78rem;color:var(--gr);"></div>
+    <div class="form-group">
+      <label>Valutazione generale</label>
+      <div class="stars" id="stars-general"></div>
+      <input type="hidden" id="rating-score" value="0">
+    </div>
+    <div class="form-group">
+      <label>Ambiente di lavoro</label>
+      <div class="stars" id="stars-env"></div>
+      <input type="hidden" id="rating-env" value="0">
+    </div>
+    <div class="form-group">
+      <label>Puntualità pagamento</label>
+      <div class="stars" id="stars-pay"></div>
+      <input type="hidden" id="rating-pay" value="0">
+    </div>
+    <div class="form-group">
+      <label>Commento (facoltativo)</label>
+      <textarea id="rating-comment" placeholder="Come è stato il turno?"></textarea>
+    </div>
+    <div id="rating-alert"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem;">
+      <button class="btn btn-outline btn-sm" onclick="closeRatingModal()">Salta</button>
+      <button class="btn btn-primary" id="btn-submit-rating" data-label="Invia recensione" style="flex:1">Invia recensione</button>
+    </div>
+  </div>
+</div>
+
+<main class="page">
+  <div id="alert-box"></div>
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
+    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--v),var(--vl));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🍸</div>
+    <div style="flex:1;">
+      <h1 id="profile-name">Caricamento…</h1>
+      <div id="profile-meta" style="font-size:.7rem;color:var(--gr);margin-top:.2rem;"></div>
+    </div>
+    <div class="stat-row" id="profile-stats"></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('turni')">🔍 Turni disponibili</button>
+    <button class="tab" onclick="switchTab('applications')">📋 Le mie candidature</button>
+    <button class="tab" onclick="switchTab('profile')">⚙️ Profilo</button>
+  </div>
+
+  <!-- TAB: TURNI DISPONIBILI -->
+  <div id="tab-turni">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:.5rem;">
+      <div style="font-size:.68rem;color:var(--gr);" id="shift-count"></div>
+      <button class="btn btn-outline btn-sm" onclick="loadShifts()">↻ Aggiorna</button>
+    </div>
+    <div id="shifts-list">
+      <div class="page-loader"><div class="spinner"></div><p>Cerco turni compatibili…</p></div>
+    </div>
+  </div>
+
+  <!-- TAB: LE MIE CANDIDATURE -->
+  <div id="tab-applications" style="display:none;">
+    <div style="margin-bottom:1rem;display:flex;justify-content:flex-end;">
+      <button class="btn btn-outline btn-sm" onclick="loadApplications()">↻ Aggiorna</button>
+    </div>
+    <div id="apps-list">
+      <div class="page-loader"><div class="spinner"></div><p>Caricamento…</p></div>
+    </div>
+  </div>
+
+  <!-- TAB: PROFILO -->
+  <div id="tab-profile" style="display:none;">
+    <div class="card" id="profile-card"></div>
+  </div>
+</main>
+
+<script src="../shared/api.js"></script>
+<script>
+if (!requireAuth("../index.html")) throw new Error("not auth");
+
+let currentShiftId = null;
+let currentAppId   = null;
+let profile        = null;
+
+// ── INIT ──────────────────────────────────────────────────────────
+async function init() {
+  try {
+    profile = await API.get("/api/workers/profile/me");
+    renderProfileHeader();
+    loadShifts();
+  } catch(e) {
+    if (e.message && e.message.includes("404")) {
+      // Profilo non ancora creato
+      showAlert("alert-box", "Completa il tuo profilo per ricevere turni.", "info");
+    }
+  }
+}
+
+function renderProfileHeader() {
+  document.getElementById("profile-name").textContent = profile.full_name;
+  document.getElementById("nav-name").textContent = profile.full_name.split(" ")[0];
+
+  const badges = [];
+  if (profile.badge_top_rated)    badges.push('<span class="badge badge-gold">🏅 Top Rated</span>');
+  if (profile.badge_no_show_zero) badges.push('<span class="badge badge-teal">✅ No-Show Zero</span>');
+  if (profile.badge_fast_responder) badges.push('<span class="badge badge-violet">⚡ Fast Responder</span>');
+
+  document.getElementById("profile-meta").innerHTML =
+    `${profile.roles?.join(", ")} · ${profile.city} · ★ ${profile.rating_avg?.toFixed(1) || "Nuovo"} (${profile.rating_count || 0} turni) ${badges.join(" ")}`;
+
+  document.getElementById("profile-stats").innerHTML = `
+    <div class="stat-mini"><div class="stat-mini-n">${profile.total_shifts_completed || 0}</div><div class="stat-mini-l">Turni</div></div>
+    <div class="stat-mini"><div class="stat-mini-n">${profile.completion_rate || 100}%</div><div class="stat-mini-l">Completamento</div></div>
+    <div class="stat-mini"><div class="stat-mini-n">${profile.no_show_count || 0}</div><div class="stat-mini-l">No-show</div></div>
+  `;
+
+  renderProfileCard();
+}
+
+function renderProfileCard() {
+  document.getElementById("profile-card").innerHTML = `
+    <h2 style="margin-bottom:1.2rem;color:var(--vl);">Il mio profilo</h2>
+    <div class="form-row" style="margin-bottom:1rem;">
+      <div><div style="font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(244,240,255,.3);margin-bottom:.2rem;">Città</div><div style="font-size:.85rem;">${profile.city || "—"}</div></div>
+      <div><div style="font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(244,240,255,.3);margin-bottom:.2rem;">Telefono</div><div style="font-size:.85rem;">${profile.phone || "—"}</div></div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(244,240,255,.3);margin-bottom:.4rem;">Ruoli</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.3rem;">${(profile.roles||[]).map(r=>`<span class="pill-tag">${r}</span>`).join("")}</div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(244,240,255,.3);margin-bottom:.4rem;">Competenze</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.3rem;">${(profile.skills||[]).map(s=>`<span class="pill-tag">${s}</span>`).join("") || '<span style="font-size:.72rem;color:var(--gr);">Nessuna ancora</span>'}</div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(244,240,255,.3);margin-bottom:.4rem;">Certificazioni</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.3rem;">${(profile.certifications||[]).map(c=>`<span class="pill-tag">${c}</span>`).join("") || '<span style="font-size:.72rem;color:var(--gr);">Nessuna ancora</span>'}</div>
+    </div>
+    ${profile.bio ? `<div style="font-size:.78rem;color:var(--gr);line-height:1.7;padding:1rem;background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.1);border-radius:8px;">${profile.bio}</div>` : ""}
+    <div style="font-size:.62rem;color:rgba(244,240,255,.2);margin-top:.8rem;">Profilo verificato: ${profile.is_verified ? "✅ Sì" : "⏳ In attesa"}</div>
+  `;
+}
+
+// ── TURNI ────────────────────────────────────────────────────────
+async function loadShifts() {
+  document.getElementById("shifts-list").innerHTML = '<div class="page-loader"><div class="spinner"></div><p>Cerco turni compatibili…</p></div>';
+  try {
+    const shifts = await API.get("/api/matching/worker/shifts");
+    renderShifts(shifts);
+  } catch(e) {
+    document.getElementById("shifts-list").innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+}
+
+function renderShifts(shifts) {
+  const el = document.getElementById("shifts-list");
+  const open = shifts.filter(s => !s.already_applied);
+  document.getElementById("shift-count").textContent =
+    `${open.length} turno${open.length === 1 ? "" : "i"} disponibil${open.length === 1 ? "e" : "i"} · ordinati per compatibilità`;
+
+  if (!shifts.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">📭</div><div class="empty-text">Nessun turno aperto nella tua zona al momento.<br>Torna presto!</div></div>`;
+    return;
+  }
+
+  el.innerHTML = shifts.map(s => {
+    const hours = calcHours(s.start_time, s.end_time);
+    const total = (hours * s.hourly_rate).toFixed(0);
+    const venue = s.venue_profiles || {};
+    return `
+    <div class="shift-card ${s.is_urgent ? "urgent" : ""}" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;">
+        <div style="flex:1;">
+          <div class="shift-role">${s.role}</div>
+          <div class="shift-meta">
+            📍 <span>${venue.name || "Struttura"}</span> · ${venue.city || s.city} ·
+            📅 <span>${formatDate(s.date)}</span> ·
+            🕐 <span>${formatTime(s.start_time)}–${formatTime(s.end_time)}</span> (${hours}h)
+          </div>
+          ${(s.requirements?.length) ? `<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.7rem;">${s.requirements.map(r=>`<span class="pill-tag">${r}</span>`).join("")}</div>` : ""}
+          ${scoreBar(s.match_score)}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div class="shift-rate">€${s.hourly_rate}<small>/h</small></div>
+          <div style="font-size:.68rem;color:var(--gr);">~€${total} totale</div>
+        </div>
+      </div>
+      <div class="shift-actions">
+        ${s.already_applied
+          ? `<span class="badge badge-violet">✓ Già candidato</span>`
+          : `<button class="btn btn-primary btn-sm" onclick="openContractModal('${s.id}','${s.role}','${s.date}','${s.start_time}','${s.end_time}',${s.hourly_rate},'${venue.name||""}','${s.city}')">Candidati</button>`
+        }
+        ${s.dress_code ? `<span style="font-size:.62rem;color:var(--gr);">👔 ${s.dress_code}</span>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── CANDIDATURE ──────────────────────────────────────────────────
+async function loadApplications() {
+  document.getElementById("apps-list").innerHTML = '<div class="page-loader"><div class="spinner"></div></div>';
+  try {
+    const apps = await API.get("/api/workers/applications");
+    renderApplications(apps);
+  } catch(e) {
+    document.getElementById("apps-list").innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+}
+
+function renderApplications(apps) {
+  const el = document.getElementById("apps-list");
+  if (!apps.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">📋</div><div class="empty-text">Nessuna candidatura ancora.<br>Vai su "Turni disponibili" per candidarti!</div></div>`;
+    return;
+  }
+  el.innerHTML = apps.map(a => {
+    const s = a.shifts || {};
+    const v = s.venue_profiles || {};
+    const hours = s.start_time && s.end_time ? calcHours(s.start_time, s.end_time) : 0;
+    const total = (hours * (s.hourly_rate || 0)).toFixed(0);
+    return `
+    <div class="shift-card" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div style="flex:1;">
+          <div class="shift-role">${s.role || "Turno"}</div>
+          <div class="shift-meta">
+            📍 <span>${v.name || "Struttura"}</span> · ${v.city || "—"} ·
+            📅 <span>${s.date ? formatDate(s.date) : "—"}</span> ·
+            🕐 <span>${formatTime(s.start_time)}–${formatTime(s.end_time)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.6rem;margin-top:.3rem;">
+            ${statusBadge(a.status)}
+            ${a.match_score ? `<span style="font-size:.62rem;color:rgba(167,139,250,.6);">Match ${a.match_score}%</span>` : ""}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div class="shift-rate" style="font-size:1.1rem;">€${s.hourly_rate || 0}<small>/h</small></div>
+          <div style="font-size:.65rem;color:var(--gr);">~€${total} totale</div>
+        </div>
+      </div>
+      ${a.status === "completed" ? `
+      <div style="margin-top:.8rem;">
+        <button class="btn btn-gold btn-sm" onclick="openRatingModal('${a.id}','${v.name||"struttura"}')">⭐ Valuta l'esperienza</button>
+      </div>` : ""}
+    </div>`;
+  }).join("");
+}
+
+// ── CONTRACT MODAL ────────────────────────────────────────────────
+function openContractModal(shiftId, role, date, start, end, rate, venueName, city) {
+  currentShiftId = shiftId;
+  const hours = calcHours(start, end);
+  document.getElementById("contract-details").innerHTML = `
+    <div class="card-sm" style="background:rgba(139,92,246,.05);border-color:rgba(139,92,246,.2);">
+      <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--vl);margin-bottom:.4rem;">${role}</div>
+      <div style="font-size:.72rem;color:var(--gr);">📍 ${venueName} · ${city}<br>
+      📅 ${formatDate(date)} · 🕐 ${formatTime(start)}–${formatTime(end)} (${hours}h)<br>
+      💶 €${rate}/h · <strong style="color:var(--gl);">Totale stimato: €${(hours*rate).toFixed(0)}</strong></div>
+    </div>`;
+  document.getElementById("contract-check").checked = false;
+  document.getElementById("contract-alert").innerHTML = "";
+  document.getElementById("contract-modal").classList.remove("hidden");
+}
+
+function closeModal() {
+  document.getElementById("contract-modal").classList.add("hidden");
+  currentShiftId = null;
+}
+
+document.getElementById("btn-confirm-apply").addEventListener("click", async () => {
+  if (!document.getElementById("contract-check").checked) {
+    document.getElementById("contract-alert").innerHTML =
+      '<div class="alert alert-error">Devi accettare i termini per candidarti</div>';
+    return;
+  }
+  setLoading("btn-confirm-apply", true);
+  try {
+    await API.post(`/api/shifts/${currentShiftId}/apply`, { contract_accepted: true });
+    closeModal();
+    showAlert("alert-box", "Candidatura inviata con successo! La struttura ti contatterà se confermata.", "success");
+    loadShifts();
+    loadApplications();
+  } catch(e) {
+    document.getElementById("contract-alert").innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+    setLoading("btn-confirm-apply", false);
+  }
+});
+
+// ── RATING MODAL ──────────────────────────────────────────────────
+function openRatingModal(appId, venueName) {
+  currentAppId = appId;
+  document.getElementById("rating-info").textContent = `Come è stato il turno presso ${venueName}?`;
+  buildStars("stars-general", "rating-score");
+  buildStars("stars-env", "rating-env");
+  buildStars("stars-pay", "rating-pay");
+  document.getElementById("rating-comment").value = "";
+  document.getElementById("rating-alert").innerHTML = "";
+  document.getElementById("rating-modal").classList.remove("hidden");
+}
+
+function closeRatingModal() {
+  document.getElementById("rating-modal").classList.add("hidden");
+  currentAppId = null;
+}
+
+function buildStars(containerId, inputId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = [1,2,3,4,5].map(n =>
+    `<span class="star inactive" data-n="${n}" onclick="setStars('${containerId}','${inputId}',${n})">★</span>`
+  ).join("");
+}
+
+function setStars(containerId, inputId, n) {
+  document.getElementById(inputId).value = n;
+  document.querySelectorAll(`#${containerId} .star`).forEach(s => {
+    s.classList.toggle("active",   parseInt(s.dataset.n) <= n);
+    s.classList.toggle("inactive", parseInt(s.dataset.n) >  n);
+  });
+}
+
+document.getElementById("btn-submit-rating").addEventListener("click", async () => {
+  const score = parseInt(document.getElementById("rating-score").value);
+  if (!score) {
+    document.getElementById("rating-alert").innerHTML = '<div class="alert alert-error">Inserisci una valutazione generale</div>';
+    return;
+  }
+  setLoading("btn-submit-rating", true);
+  try {
+    await API.post("/api/ratings", {
+      application_id: currentAppId,
+      score,
+      work_environment:    parseInt(document.getElementById("rating-env").value) || null,
+      payment_punctuality: parseInt(document.getElementById("rating-pay").value) || null,
+      comment: document.getElementById("rating-comment").value.trim() || null,
+    });
+    closeRatingModal();
+    showAlert("alert-box", "Recensione inviata. Grazie!", "success");
+    loadApplications();
+  } catch(e) {
+    document.getElementById("rating-alert").innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+    setLoading("btn-submit-rating", false);
+  }
+});
+
+// ── TABS ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  ["turni","applications","profile"].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === name ? "" : "none";
+  });
+  document.querySelectorAll(".tab").forEach((btn, i) => {
+    btn.classList.toggle("active", ["turni","applications","profile"][i] === name);
+  });
+  if (name === "applications") loadApplications();
+}
+
+function logout() {
+  clearSession();
+  window.location.href = "../index.html";
+}
+
+init();
+</script>
+</body>
+</html>

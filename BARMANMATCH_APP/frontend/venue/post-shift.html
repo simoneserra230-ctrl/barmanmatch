@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Pubblica turno — BarmanMatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+.earnings-preview{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.03));border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:1.2rem;margin-top:.5rem;}
+.ep-row{display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:.3rem;color:var(--gr);}
+.ep-row strong{color:var(--w);}
+.ep-total{display:flex;justify-content:space-between;font-size:.95rem;padding-top:.6rem;border-top:1px solid rgba(201,168,76,.15);margin-top:.3rem;}
+.ep-total span:last-child{font-family:'Syne',sans-serif;font-weight:700;color:var(--gl);}
+</style>
+</head>
+<body>
+<nav class="app-nav">
+  <a href="dashboard.html" class="app-nav-brand">BarmanMatch<span>← Dashboard</span></a>
+  <div class="app-nav-right">
+    <a href="dashboard.html">Annulla</a>
+  </div>
+</nav>
+
+<main class="page-sm">
+  <div style="text-align:center;margin-bottom:2rem;">
+    <div style="font-size:2rem;margin-bottom:.5rem;">📋</div>
+    <h1>Pubblica un turno</h1>
+    <p style="font-size:.78rem;color:var(--gr);margin-top:.4rem;">Compila il form. I lavoratori compatibili riceveranno una notifica entro pochi minuti.</p>
+  </div>
+
+  <div id="alert-box"></div>
+
+  <div class="card">
+    <form id="shift-form">
+      <div class="form-group">
+        <label>Ruolo richiesto *</label>
+        <select id="role" required>
+          <option value="">— Seleziona il ruolo —</option>
+          <option value="bartender">Bartender</option>
+          <option value="barback">Barback</option>
+          <option value="sommelier">Sommelier</option>
+          <option value="cameriere">Cameriere / Waitstaff</option>
+          <option value="maitre">Maître</option>
+          <option value="chef">Chef</option>
+          <option value="sous chef">Sous Chef</option>
+          <option value="cuoco">Cuoco</option>
+          <option value="receptionist">Receptionist</option>
+          <option value="housekeeping">Housekeeping</option>
+          <option value="event staff">Event Staff</option>
+          <option value="runner">Runner</option>
+          <option value="lavapiatti">Lavapiatti</option>
+          <option value="barista">Barista</option>
+          <option value="hostess">Hostess / Host</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data *</label>
+          <input type="date" id="date" required>
+        </div>
+        <div class="form-group">
+          <label>Città *</label>
+          <input type="text" id="city" required placeholder="Milano">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Inizio turno *</label>
+          <input type="time" id="start_time" required>
+        </div>
+        <div class="form-group">
+          <label>Fine turno *</label>
+          <input type="time" id="end_time" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tariffa (€/h) *</label>
+          <input type="number" id="hourly_rate" required placeholder="14" min="1" step="0.5" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+          <label>Posti disponibili</label>
+          <input type="number" id="spots" value="1" min="1" max="20">
+        </div>
+      </div>
+
+      <!-- Anteprima guadagno -->
+      <div class="earnings-preview" id="earnings-preview" style="display:none;">
+        <div class="ep-row"><span>Ore totali</span><strong id="ep-hours">—</strong></div>
+        <div class="ep-row"><span>Tariffa</span><strong id="ep-rate">—</strong></div>
+        <div class="ep-row"><span>Commissione piattaforma (20%)</span><strong id="ep-comm">—</strong></div>
+        <div class="ep-total"><span>Costo totale per te</span><span id="ep-total">—</span></div>
+      </div>
+
+      <div class="form-group" style="margin-top:1.2rem;">
+        <label>Requisiti specifici (premi Invio)</label>
+        <div class="pills-wrap" id="req-wrap">
+          <input type="text" class="pills-input" id="req-input" placeholder="HACCP, cocktail experience, inglese…">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Dress code</label>
+          <input type="text" id="dress_code" placeholder="Camicia bianca, pantaloni neri">
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;padding-top:1.5rem;gap:.6rem;">
+          <input type="checkbox" id="is_urgent" style="width:18px;height:18px;accent-color:var(--g);">
+          <label for="is_urgent" style="font-size:.72rem;color:var(--gr);letter-spacing:normal;text-transform:none;">🚨 Turno urgente (+visibilità)</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Note aggiuntive per il lavoratore</label>
+        <textarea id="description" placeholder="Dettagli sul servizio, briefing, parcheggio, accesso…"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-gold btn-full" id="btn-submit" data-label="Pubblica turno ✓" style="margin-top:.5rem;">Pubblica turno ✓</button>
+    </form>
+  </div>
+</main>
+
+<script src="../shared/api.js"></script>
+<script>
+if (!requireAuth("../index.html")) throw new Error("not auth");
+
+// Set default date = tomorrow
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+document.getElementById("date").value = tomorrow.toISOString().split("T")[0];
+
+// Pills
+const requirements = [];
+const reqWrap  = document.getElementById("req-wrap");
+const reqInput = document.getElementById("req-input");
+
+reqInput.addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== ",") return;
+  e.preventDefault();
+  const val = reqInput.value.trim();
+  if (!val || requirements.includes(val)) return;
+  requirements.push(val);
+  reqInput.value = "";
+  renderReqPills();
+});
+
+function renderReqPills() {
+  reqWrap.innerHTML = "";
+  requirements.forEach(v => {
+    const tag = document.createElement("span");
+    tag.className = "pill-tag";
+    tag.innerHTML = `${v}<button type="button" onclick="removeReq('${v}')">×</button>`;
+    reqWrap.appendChild(tag);
+  });
+  reqWrap.appendChild(reqInput);
+}
+
+function removeReq(v) {
+  const i = requirements.indexOf(v);
+  if (i > -1) requirements.splice(i, 1);
+  renderReqPills();
+}
+
+// Preview costo
+function updatePreview() {
+  const start = document.getElementById("start_time").value;
+  const end   = document.getElementById("end_time").value;
+  const rate  = parseFloat(document.getElementById("hourly_rate").value);
+  const prev  = document.getElementById("earnings-preview");
+
+  if (!start || !end || !rate) { prev.style.display = "none"; return; }
+
+  const hours = calcHours(start, end);
+  if (hours <= 0) { prev.style.display = "none"; return; }
+
+  const gross = hours * rate;
+  const comm  = gross * 0.20;
+  const total = gross + comm;
+
+  document.getElementById("ep-hours").textContent = `${hours.toFixed(1)}h`;
+  document.getElementById("ep-rate").textContent  = `€${rate}/h`;
+  document.getElementById("ep-comm").textContent  = `€${comm.toFixed(2)}`;
+  document.getElementById("ep-total").textContent = `€${total.toFixed(2)}`;
+  prev.style.display = "";
+}
+
+document.getElementById("start_time").addEventListener("change", updatePreview);
+document.getElementById("end_time").addEventListener("change", updatePreview);
+
+// Submit
+document.getElementById("shift-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const start = document.getElementById("start_time").value;
+  const end   = document.getElementById("end_time").value;
+
+  if (start >= end) {
+    showAlert("alert-box", "L'orario di fine deve essere dopo l'inizio");
+    return;
+  }
+
+  setLoading("btn-submit", true);
+  try {
+    const shift = await API.post("/api/shifts", {
+      role:        document.getElementById("role").value,
+      date:        document.getElementById("date").value,
+      start_time:  start,
+      end_time:    end,
+      hourly_rate: parseFloat(document.getElementById("hourly_rate").value),
+      city:        document.getElementById("city").value.trim(),
+      spots:       parseInt(document.getElementById("spots").value) || 1,
+      requirements,
+      dress_code:  document.getElementById("dress_code").value.trim() || null,
+      description: document.getElementById("description").value.trim() || null,
+      is_urgent:   document.getElementById("is_urgent").checked,
+    });
+    // Redirect alla dashboard con messaggio di successo
+    sessionStorage.setItem("bm_flash", "Turno pubblicato! I lavoratori compatibili verranno notificati.");
+    window.location.href = "dashboard.html";
+  } catch(err) {
+    showAlert("alert-box", err.message || "Errore durante la pubblicazione");
+    setLoading("btn-submit", false);
+  }
+});
+
+// Set default time
+document.getElementById("start_time").value = "18:00";
+document.getElementById("end_time").value   = "23:00";
+updatePreview();
+</script>
+</body>
+</html>

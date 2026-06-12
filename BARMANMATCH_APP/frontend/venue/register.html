@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Registra la tua struttura — BarmanMatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<nav class="app-nav">
+  <a href="../index.html" class="app-nav-brand">BarmanMatch<span>Registrazione Struttura</span></a>
+  <div class="app-nav-right"><a href="login.html">Hai già un account? Accedi</a></div>
+</nav>
+
+<main class="page-sm">
+  <div style="text-align:center;margin-bottom:2rem;">
+    <div style="font-size:2rem;margin-bottom:.5rem;">🏨</div>
+    <h1>Registra la tua struttura</h1>
+    <p style="font-size:.78rem;color:var(--gr);margin-top:.4rem;">Inizia a trovare personale qualificato in pochi minuti.</p>
+  </div>
+
+  <div id="alert-box"></div>
+
+  <div class="card">
+    <form id="reg-form">
+      <div id="step-1">
+        <div style="font-size:.52rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gl);margin-bottom:1rem;">Passo 1 di 2 — Credenziali</div>
+        <div class="form-group">
+          <label>Email aziendale *</label>
+          <input type="email" id="email" required placeholder="info@tuo-hotel.it">
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" id="password" required placeholder="min. 8 caratteri" minlength="8">
+        </div>
+        <button type="button" class="btn btn-gold btn-full" id="btn-step1" data-label="Continua →">Continua →</button>
+      </div>
+
+      <div id="step-2" style="display:none;">
+        <div style="font-size:.52rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gl);margin-bottom:1rem;">Passo 2 di 2 — La tua struttura</div>
+        <div class="form-group">
+          <label>Nome struttura *</label>
+          <input type="text" id="name" required placeholder="Hotel Excelsior Milano">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo struttura *</label>
+            <select id="venue_type" required>
+              <option value="">— Seleziona —</option>
+              <option value="hotel">Hotel</option>
+              <option value="resort">Resort</option>
+              <option value="ristorante">Ristorante</option>
+              <option value="bar">Bar / Cocktail Bar</option>
+              <option value="catering">Catering</option>
+              <option value="event_venue">Event Venue</option>
+              <option value="altro">Altro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Città *</label>
+            <input type="text" id="city" required placeholder="Milano">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Indirizzo</label>
+          <input type="text" id="address" placeholder="Via Roma 1">
+        </div>
+        <div class="form-group">
+          <label>Telefono</label>
+          <input type="text" id="phone" placeholder="+39 02 1234 5678">
+        </div>
+        <div class="form-group">
+          <label>Descrizione breve</label>
+          <textarea id="description" placeholder="Presenta la tua struttura ai lavoratori…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-gold btn-full" id="btn-submit" data-label="Crea account struttura ✓">Crea account struttura ✓</button>
+        <div style="text-align:center;margin-top:.8rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="showStep(1)">← Indietro</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="divider-label"><span>oppure</span></div>
+  <p style="text-align:center;font-size:.7rem;color:var(--gr);">Hai già un account? <a href="login.html" style="color:var(--gl);">Accedi qui</a></p>
+</main>
+
+<script src="../shared/api.js"></script>
+<script>
+function showStep(n) {
+  document.getElementById("step-1").style.display = n === 1 ? "" : "none";
+  document.getElementById("step-2").style.display = n === 2 ? "" : "none";
+}
+
+document.getElementById("btn-step1").addEventListener("click", () => {
+  const email = document.getElementById("email").value.trim();
+  const pass  = document.getElementById("password").value;
+  if (!email || !pass || pass.length < 8) {
+    showAlert("alert-box", "Inserisci email e password (min. 8 caratteri)");
+    return;
+  }
+  showStep(2);
+});
+
+document.getElementById("reg-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const venue_type = document.getElementById("venue_type").value;
+  if (!venue_type) { showAlert("alert-box", "Seleziona il tipo di struttura"); return; }
+
+  const email = document.getElementById("email").value.trim();
+  const pass  = document.getElementById("password").value;
+  setLoading("btn-submit", true);
+
+  try {
+    await API.post("/api/auth/register", { email, password: pass, role: "venue" });
+
+    const loginRes = await API.post("/api/auth/login", { email, password: pass, role: "venue" });
+    setSession(loginRes);
+
+    await API.post("/api/venues/profile", {
+      name:        document.getElementById("name").value.trim(),
+      phone:       document.getElementById("phone").value.trim() || null,
+      city:        document.getElementById("city").value.trim(),
+      venue_type,
+      address:     document.getElementById("address").value.trim() || null,
+      description: document.getElementById("description").value.trim() || null,
+    });
+
+    window.location.href = "dashboard.html";
+  } catch(err) {
+    showAlert("alert-box", err.message || "Errore durante la registrazione");
+    setLoading("btn-submit", false);
+  }
+});
+</script>
+</body>
+</html>

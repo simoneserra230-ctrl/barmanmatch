@@ -1,0 +1,74 @@
+from fastapi import APIRouter, HTTPException, Depends
+from database import get_db
+from auth_middleware import require_uid
+from models import VenueProfileCreate, VenueProfileUpdate
+
+router = APIRouter()
+
+
+@router.post("/profile")
+def create_profile(body: VenueProfileCreate, uid: str = Depends(require_uid)):
+    db = get_db()
+    existing = db.table("venue_profiles").select("id").eq("id", uid).execute()
+    if existing.data:
+        raise HTTPException(status_code=400, detail="Profilo già esistente")
+
+    payload = body.model_dump()
+    payload["id"] = uid
+    payload["email"] = db.auth.admin.get_user_by_id(uid).user.email
+
+    res = db.table("venue_profiles").insert(payload).execute()
+    if not res.data:
+        raise HTTPException(status_code=500, detail="Errore creazione profilo")
+    return res.data[0]
+
+
+@router.get("/profile/me")
+def get_my_profile(uid: str = Depends(require_uid)):
+    db = get_db()
+    res = db.table("venue_profiles").select("*").eq("id", uid).single().execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Profilo non trovato")
+    return res.data
+
+
+@router.patch("/profile/me")
+def update_profile(body: VenueProfileUpdate, uid: str = Depends(require_uid)):
+    db = get_db()
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nessun campo da aggiornare")
+    res = db.table("venue_profiles").update(updates).eq("id", uid).execute()
+    if not res.data:
+        raise HTTPException(status_code=500, detail="Aggiornamento fallito")
+    return res.data[0]
+
+
+@router.get("/favorites")
+def get_favorites(uid: str = Depends(require_uid)):
+    db = get_db()
+    res = (
+        db.table("venue_favorites")
+        .select("*, worker_profiles(*)")
+        .eq("venue_id", uid)
+        .execute()
+    )
+    return res.data or []
+
+
+@router.post("/favorites/{worker_id}")
+def add_favorite(worker_id: str, uid: str = Depends(require_uid)):
+    db = get_db()
+    db.table("venue_favorites").upsert(
+        {"venue_id": uid, "worker_id": worker_id}
+    ).execute()
+    return {"ok": True}
+
+
+@router.delete("/favorites/{worker_id}")
+def remove_favorite(worker_id: str, uid: str = Depends(require_uid)):
+    db = get_db()
+    db.table("venue_favorites").delete().eq("venue_id", uid).eq(
+        "worker_id", worker_id
+    ).execute()
+    return {"ok": True}

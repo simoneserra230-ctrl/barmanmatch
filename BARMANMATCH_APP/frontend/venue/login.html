@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Accedi struttura — BarmanMatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<nav class="app-nav">
+  <a href="../index.html" class="app-nav-brand">BarmanMatch<span>Area Strutture</span></a>
+  <div class="app-nav-right"><a href="register.html">Registra la tua struttura</a></div>
+</nav>
+
+<main class="page-sm">
+  <div style="text-align:center;margin-bottom:2rem;">
+    <div style="font-size:2rem;margin-bottom:.5rem;">🏨</div>
+    <h1>Accedi alla dashboard</h1>
+    <p style="font-size:.78rem;color:var(--gr);margin-top:.4rem;">Gestisci turni, candidature e il tuo team.</p>
+  </div>
+
+  <div id="alert-box"></div>
+
+  <div class="card">
+    <form id="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" required placeholder="info@tua-struttura.it" autofocus>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-gold btn-full" id="btn-login" data-label="Accedi →">Accedi →</button>
+    </form>
+  </div>
+
+  <div class="divider-label"><span>oppure</span></div>
+  <p style="text-align:center;font-size:.7rem;color:var(--gr);">
+    Non hai un account? <a href="register.html" style="color:var(--gl);">Registra la tua struttura</a>
+  </p>
+  <p style="text-align:center;margin-top:.5rem;font-size:.65rem;color:rgba(244,240,255,.2);">
+    Sei un lavoratore? <a href="../worker/login.html" style="color:var(--gr);">Accedi qui</a>
+  </p>
+</main>
+
+<script src="../shared/api.js"></script>
+<script>
+if (getToken()) window.location.href = "dashboard.html";
+
+document.getElementById("login-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const email = document.getElementById("email").value.trim();
+  const pass  = document.getElementById("password").value;
+  setLoading("btn-login", true);
+  try {
+    const res = await API.post("/api/auth/login", { email, password: pass, role: "venue" });
+    setSession(res);
+    window.location.href = "dashboard.html";
+  } catch(err) {
+    showAlert("alert-box", "Email o password non corretti");
+    setLoading("btn-login", false);
+  }
+});
+</script>
+</body>
+</html>

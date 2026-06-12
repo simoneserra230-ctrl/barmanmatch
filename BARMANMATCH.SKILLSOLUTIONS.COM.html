@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BarmanMatch — Il Marketplace dell'Hospitality Italiano · Skills Solutions</title>
+<meta name="description" content="BarmanMatch: il marketplace two-sided che connette strutture ricettive e professionisti dell'hospitality. Matching AI, turni on-demand, rating verificati. Ispirato a Deliveroo + Booking.com.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --v:#8B5CF6;--vl:#A78BFA;--vd:#6D28D9;
+  --g:#C9A84C;--gl:#F0D78A;
+  --t:#00E5B4;
+  --bg:#07060E;--bg2:#0E0B1A;--bg3:#130F20;
+  --w:#F4F0FF;--gr:rgba(244,240,255,.4);
+  --r:12px;--rp:999px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--w);font-family:'DM Sans',sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:900;padding:1rem 2.5rem;display:flex;justify-content:space-between;align-items:center;background:rgba(7,6,14,.9);backdrop-filter:blur(24px);border-bottom:1px solid rgba(139,92,246,.1);}
+.nav-logo{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--vl);text-decoration:none;}
+.nav-logo span{color:rgba(244,240,255,.35);font-size:.55rem;letter-spacing:.22em;text-transform:uppercase;display:block;margin-top:-2px;}
+.nav-links{display:flex;align-items:center;gap:1.5rem;}
+.nav-links a{font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gr);text-decoration:none;transition:color .3s;}
+.nav-links a:hover{color:var(--vl);}
+.nav-cta-pair{display:flex;gap:.5rem;}
+.btn-w{padding:.4rem 1rem;border:1px solid rgba(139,92,246,.3);color:var(--vl);font-size:.55rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;text-decoration:none;border-radius:var(--rp);transition:all .3s;}
+.btn-w:hover{background:rgba(139,92,246,.1);}
+.btn-v{padding:.4rem 1rem;background:var(--v);color:#fff;font-size:.55rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;text-decoration:none;border-radius:var(--rp);transition:background .3s;}
+.btn-v:hover{background:var(--vl);}
+@media(max-width:700px){.nav-links{display:none;} nav{padding:.9rem 1.2rem;}}
+
+/* ── HERO ── */
+.hero{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:7rem 2.5rem 4rem;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 90% 70% at 50% 20%,rgba(139,92,246,.08),transparent);}
+.hero::after{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(139,92,246,.05),transparent);border-radius:50%;pointer-events:none;}
+.hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;}
+@media(max-width:800px){.hero-inner{grid-template-columns:1fr;gap:2.5rem;}}
+.hero-tag{display:inline-flex;align-items:center;gap:.5rem;font-size:.48rem;letter-spacing:.4em;text-transform:uppercase;color:rgba(167,139,250,.7);border:1px solid rgba(139,92,246,.2);padding:.35rem .9rem;border-radius:var(--rp);margin-bottom:1.8rem;}
+.hero-dot{width:5px;height:5px;border-radius:50%;background:var(--t);animation:blink 1.8s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.8rem,7vw,6rem);font-weight:900;line-height:.9;margin-bottom:1.5rem;}
+.hero h1 em{font-style:italic;background:linear-gradient(135deg,#C4B5FD,var(--v));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;}
+.hero-desc{font-size:.88rem;color:var(--gr);line-height:1.9;max-width:480px;margin-bottom:2.5rem;}
+.hero-btns{display:flex;gap:.8rem;flex-wrap:wrap;}
+.btn-str{display:inline-flex;align-items:center;gap:.5rem;padding:1rem 2rem;background:var(--v);color:#fff;font-size:.65rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;border-radius:var(--rp);transition:all .3s;}
+.btn-str:hover{background:var(--vl);transform:translateY(-2px);}
+.btn-lav{display:inline-flex;align-items:center;gap:.5rem;padding:1rem 2rem;border:1px solid rgba(139,92,246,.3);color:var(--vl);font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;border-radius:var(--rp);transition:all .3s;}
+.btn-lav:hover{background:rgba(139,92,246,.08);}
+.hero-card{background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);border-radius:16px;padding:1.5rem;position:relative;overflow:hidden;}
+.hc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;}
+.hc-name{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--vl);}
+.hc-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.45rem;letter-spacing:.18em;text-transform:uppercase;background:rgba(0,229,180,.1);color:var(--t);border:1px solid rgba(0,229,180,.2);padding:.22rem .65rem;border-radius:var(--rp);}
+.hc-role{font-size:.75rem;color:var(--gr);margin-bottom:.8rem;}
+.hc-stars{color:#F59E0B;font-size:.85rem;margin-bottom:.5rem;}
+.hc-pills{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:1rem;}
+.pill{font-size:.42rem;letter-spacing:.12em;padding:.2rem .55rem;border:1px solid rgba(139,92,246,.25);border-radius:var(--rp);color:rgba(167,139,250,.7);}
+.hc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;}
+.hcs{text-align:center;padding:.5rem;background:rgba(255,255,255,.03);border-radius:8px;}
+.hcs-n{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--vl);}
+.hcs-l{font-size:.42rem;color:rgba(244,240,255,.35);letter-spacing:.1em;text-transform:uppercase;}
+.hc-score{margin-top:1rem;padding:1rem;background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(201,168,76,.06));border-radius:8px;text-align:center;}
+.hc-score-n{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;color:var(--vl);}
+.hc-score-l{font-size:.48rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gr);}
+.match-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:.5rem;overflow:hidden;}
+.match-fill{height:100%;width:92%;background:linear-gradient(90deg,var(--v),var(--vl));border-radius:2px;}
+
+/* ── STATS ── */
+.stats{padding:3.5rem 2.5rem;border-top:1px solid rgba(139,92,246,.08);border-bottom:1px solid rgba(139,92,246,.08);}
+.stats-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem;}
+@media(max-width:800px){.stats-inner{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:450px){.stats-inner{grid-template-columns:1fr 1fr;}}
+.stat{text-align:center;}
+.stat-n{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--vl);line-height:1;}
+.stat-l{font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(244,240,255,.35);margin-top:.2rem;}
+
+/* ── SEZIONI GENERALI ── */
+.section{padding:5.5rem 2.5rem;max-width:1200px;margin:0 auto;}
+.sec-label{font-size:.48rem;letter-spacing:.38em;color:var(--vl);text-transform:uppercase;margin-bottom:.7rem;display:flex;align-items:center;gap:.5rem;}
+.sec-label::before{content:'◆';font-size:.4rem;}
+.sec-h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,4.5vw,3.5rem);font-weight:700;line-height:1.1;margin-bottom:.6rem;}
+.sec-h2 em{font-style:italic;color:var(--vl);}
+.sec-sub{font-size:.82rem;color:var(--gr);max-width:600px;line-height:1.85;margin-bottom:3rem;}
+.divider{border:none;border-top:1px solid rgba(139,92,246,.08);margin:0;}
+
+/* ── COME FUNZIONA ── */
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
+@media(max-width:750px){.how-grid{grid-template-columns:1fr;gap:1rem;}}
+.how-card{background:var(--bg2);border:1px solid rgba(139,92,246,.12);border-radius:var(--r);padding:2rem;position:relative;overflow:hidden;transition:all .4s;}
+.how-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transform:scaleX(0);transform-origin:left;transition:transform .5s;}
+.how-card.c1::before{background:linear-gradient(90deg,var(--v),var(--vl));}
+.how-card.c2::before{background:linear-gradient(90deg,var(--g),var(--gl));}
+.how-card.c3::before{background:linear-gradient(90deg,var(--t),#00FFA3);}
+.how-card:hover::before{transform:scaleX(1);}
+.how-card:hover{transform:translateY(-4px);}
+.how-n{font-family:'Syne',sans-serif;font-size:3.5rem;font-weight:800;color:rgba(139,92,246,.12);line-height:1;margin-bottom:.6rem;}
+.how-ico{font-size:1.8rem;margin-bottom:.8rem;}
+.how-t{font-size:1rem;font-weight:600;color:var(--vl);margin-bottom:.5rem;}
+.how-d{font-size:.78rem;color:var(--gr);line-height:1.85;}
+.how-steps{margin-top:1rem;display:flex;flex-direction:column;gap:.4rem;}
+.how-step{display:flex;align-items:flex-start;gap:.5rem;font-size:.72rem;color:rgba(244,240,255,.5);}
+.how-step::before{content:'→';color:var(--vl);flex-shrink:0;margin-top:1px;}
+
+/* ── TWO SIDED ── */
+.two-side{display:grid;grid-template-columns:1fr 1fr;gap:2rem;}
+@media(max-width:800px){.two-side{grid-template-columns:1fr;}}
+.side-card{background:var(--bg2);border:1px solid;border-radius:var(--r);padding:2.5rem;position:relative;overflow:hidden;transition:all .4s;}
+.side-card.worker{border-color:rgba(139,92,246,.18);}
+.side-card.venue{border-color:rgba(201,168,76,.18);}
+.side-card:hover{transform:translateY(-4px);box-shadow:0 24px 60px rgba(0,0,0,.4);}
+.side-ico{font-size:2.4rem;margin-bottom:1rem;}
+.side-h{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;margin-bottom:.5rem;}
+.side-card.worker .side-h{color:#C4B5FD;}
+.side-card.venue .side-h{color:var(--gl);}
+.side-desc{font-size:.82rem;color:var(--gr);line-height:1.85;margin-bottom:1.5rem;}
+.feat-list{display:flex;flex-direction:column;gap:.5rem;}
+.feat-row{display:flex;align-items:flex-start;gap:.6rem;font-size:.75rem;color:rgba(244,240,255,.6);}
+.feat-row::before{content:'✓';flex-shrink:0;font-size:.7rem;}
+.side-card.worker .feat-row::before{color:var(--vl);}
+.side-card.venue .feat-row::before{color:var(--gl);}
+.side-cta{display:inline-flex;align-items:center;gap:.5rem;margin-top:1.5rem;font-size:.58rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;border-radius:var(--rp);padding:.7rem 1.6rem;transition:all .3s;}
+.side-card.worker .side-cta{background:var(--v);color:#fff;}
+.side-card.worker .side-cta:hover{background:var(--vl);}
+.side-card.venue .side-cta{background:var(--g);color:#000;}
+.side-card.venue .side-cta:hover{background:var(--gl);}
+
+/* ── PROFILE MOCKUP ── */
+.profile-mockup{background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.15);border-radius:12px;padding:1.5rem;margin-top:1.5rem;}
+.pm-head{display:flex;align-items:center;gap:.8rem;margin-bottom:1rem;}
+.pm-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--v),var(--vl));display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.pm-info{flex:1;}
+.pm-name{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--w);}
+.pm-role{font-size:.6rem;color:var(--gr);}
+.pm-badges{display:flex;gap:.3rem;margin-bottom:.8rem;flex-wrap:wrap;}
+.pm-badge{font-size:.4rem;letter-spacing:.12em;padding:.18rem .5rem;border-radius:var(--rp);}
+.b-top{background:rgba(245,158,11,.1);color:#FCD34D;border:1px solid rgba(245,158,11,.2);}
+.b-zero{background:rgba(0,229,180,.1);color:var(--t);border:1px solid rgba(0,229,180,.2);}
+.b-fast{background:rgba(139,92,246,.1);color:var(--vl);border:1px solid rgba(139,92,246,.2);}
+.pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
+.pm-cell{font-size:.62rem;color:rgba(244,240,255,.4);}
+.pm-cell strong{color:var(--w);display:block;font-size:.7rem;}
+
+/* ── AI AGENTS ── */
+.agents-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;}
+@media(max-width:900px){.agents-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:500px){.agents-grid{grid-template-columns:1fr;}}
+.agent-card{background:var(--bg2);border:1px solid rgba(139,92,246,.1);border-radius:var(--r);padding:1.5rem;position:relative;overflow:hidden;transition:all .4s;}
+.agent-card:hover{border-color:rgba(139,92,246,.3);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.4);}
+.agent-card::after{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:radial-gradient(circle at top right,rgba(139,92,246,.12),transparent);border-radius:0 var(--r) 0 0;}
+.ag-num{font-size:.42rem;letter-spacing:.3em;color:rgba(139,92,246,.5);text-transform:uppercase;margin-bottom:.4rem;}
+.ag-ico{font-size:1.5rem;margin-bottom:.5rem;}
+.ag-name{font-size:.82rem;font-weight:700;color:var(--vl);margin-bottom:.4rem;}
+.ag-role{font-size:.7rem;color:var(--gr);line-height:1.7;margin-bottom:.7rem;}
+.ag-trigger{font-size:.55rem;letter-spacing:.1em;color:rgba(139,92,246,.6);border:1px solid rgba(139,92,246,.15);padding:.2rem .55rem;border-radius:var(--rp);display:inline-block;}
+
+/* ── WORKFLOW ── */
+.workflow-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
+@media(max-width:800px){.workflow-grid{grid-template-columns:1fr;}}
+.wf-card{background:var(--bg3);border:1px solid rgba(139,92,246,.1);border-radius:var(--r);padding:2rem;position:relative;}
+.wf-letter{font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:rgba(139,92,246,.15);line-height:1;margin-bottom:.5rem;}
+.wf-t{font-size:.85rem;font-weight:600;color:var(--vl);margin-bottom:1rem;}
+.wf-step{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;font-size:.7rem;color:rgba(244,240,255,.5);line-height:1.6;}
+.wf-arrow{color:var(--vl);flex-shrink:0;margin-top:1px;}
+
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;}
+@media(max-width:900px){.pricing-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:500px){.pricing-grid{grid-template-columns:1fr;}}
+.price-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:2rem;transition:all .4s;position:relative;overflow:hidden;}
+.price-card.featured{border-color:rgba(139,92,246,.3);background:linear-gradient(135deg,rgba(139,92,246,.08),var(--bg2));}
+.price-card.featured::before{content:'Più scelto';position:absolute;top:1rem;right:1rem;font-size:.4rem;letter-spacing:.2em;text-transform:uppercase;background:var(--v);color:#fff;padding:.2rem .6rem;border-radius:var(--rp);}
+.price-card:hover{transform:translateY(-4px);}
+.price-plan{font-size:.52rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gr);margin-bottom:.5rem;}
+.price-amount{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;color:var(--w);line-height:1;}
+.price-amount span{font-size:.75rem;color:var(--gr);font-weight:400;}
+.price-comm{font-size:.68rem;color:var(--vl);margin:.4rem 0 1rem;font-weight:600;}
+.price-feats{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1.5rem;}
+.price-feat{font-size:.7rem;color:rgba(244,240,255,.5);display:flex;gap:.4rem;align-items:flex-start;}
+.price-feat::before{content:'·';color:var(--vl);flex-shrink:0;}
+.price-btn{display:block;text-align:center;padding:.65rem;font-size:.55rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;border-radius:var(--rp);text-decoration:none;transition:all .3s;}
+.price-card.featured .price-btn{background:var(--v);color:#fff;}
+.price-card.featured .price-btn:hover{background:var(--vl);}
+.price-card:not(.featured) .price-btn{border:1px solid rgba(139,92,246,.25);color:var(--vl);}
+.price-card:not(.featured) .price-btn:hover{background:rgba(139,92,246,.08);}
+
+/* ── ROADMAP ── */
+.rm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
+@media(max-width:700px){.rm-grid{grid-template-columns:1fr;}}
+.rm-card{background:var(--bg2);border:1px solid rgba(255,255,255,.05);border-radius:var(--r);padding:2rem;transition:all .4s;}
+.rm-card:hover{border-color:rgba(139,92,246,.2);transform:translateY(-3px);}
+.rm-phase{font-size:.42rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gr);margin-bottom:.3rem;}
+.rm-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--vl);margin-bottom:.3rem;}
+.rm-period{font-size:.58rem;color:rgba(244,240,255,.3);margin-bottom:1rem;}
+.rm-item{display:flex;align-items:flex-start;gap:.5rem;font-size:.7rem;color:rgba(244,240,255,.5);margin-bottom:.4rem;line-height:1.6;}
+.rm-item::before{content:'[ ]';color:rgba(139,92,246,.4);flex-shrink:0;font-size:.6rem;font-family:monospace;}
+.rm-card.done .rm-item::before{content:'[✓]';color:var(--t);}
+
+/* ── COMPLIANCE ── */
+.compliance{padding:3.5rem 2.5rem;background:rgba(139,92,246,.03);border-top:1px solid rgba(139,92,246,.08);border-bottom:1px solid rgba(139,92,246,.08);}
+.comp-inner{max-width:1100px;margin:0 auto;}
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2rem;}
+@media(max-width:700px){.comp-grid{grid-template-columns:1fr;}}
+.comp-item{display:flex;align-items:flex-start;gap:.7rem;}
+.comp-ico{font-size:1.2rem;flex-shrink:0;margin-top:2px;}
+.comp-t{font-size:.75rem;font-weight:600;color:var(--vl);margin-bottom:.2rem;}
+.comp-d{font-size:.68rem;color:var(--gr);line-height:1.7;}
+
+/* ── CTA ── */
+.cta-section{padding:6rem 2.5rem;text-align:center;position:relative;overflow:hidden;}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(139,92,246,.1),transparent);}
+.cta-section h2{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5vw,4rem);font-weight:900;line-height:1;margin-bottom:1.2rem;}
+.cta-section h2 em{font-style:italic;background:linear-gradient(135deg,#C4B5FD,var(--v));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cta-section p{font-size:.88rem;color:var(--gr);max-width:500px;margin:0 auto 2.5rem;line-height:1.9;}
+.cta-group{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;}
+
+/* ── FOOTER ── */
+footer{padding:2.5rem 2.5rem;border-top:1px solid rgba(139,92,246,.08);}
+.foot-in{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
+.foot-brand{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:rgba(139,92,246,.5);}
+.foot-eco{display:flex;gap:1.5rem;flex-wrap:wrap;}
+.foot-eco a{font-size:.48rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(244,240,255,.2);text-decoration:none;transition:color .3s;}
+.foot-eco a:hover{color:var(--vl);}
+.foot-copy{font-size:.48rem;color:rgba(244,240,255,.12);width:100%;}
+
+/* ── REVEAL ── */
+.rv{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease;}
+.rv.visible{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a href="index.html" class="nav-logo">BarmanMatch<span>Hospitality Staffing · Skills Solutions</span></a>
+  <div class="nav-links">
+    <a href="#come-funziona">Come funziona</a>
+    <a href="#per-te">Per te</a>
+    <a href="#ai">AI Layer</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <div class="nav-cta-pair">
+    <a href="#registrati" class="btn-w">Sei un lavoratore?</a>
+    <a href="#registrati" class="btn-v">Sei una struttura?</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag"><span class="hero-dot"></span>Beta · Italia 2026</div>
+      <h1>Il marketplace<br>dell'hospitality<em>italiano.</em></h1>
+      <p class="hero-desc">Connette strutture ricettive e professionisti per turni on-demand, stagionali e permanenti. Matching AI, rating bidirezionale verificato, pagamenti automatici. Ispirato a Deliveroo + Booking.com.</p>
+      <div class="hero-btns">
+        <a href="#registrati" class="btn-str">🏨 Sono una struttura</a>
+        <a href="#registrati" class="btn-lav">👤 Sono un professionista</a>
+      </div>
+    </div>
+    <div>
+      <div class="hc-head">
+        <div>
+          <div class="hc-name">Marco R. · Maître & Sommelier</div>
+          <div class="hc-role">Milano · 8 anni esperienza</div>
+        </div>
+        <div class="hc-badge">🏅 Top Rated</div>
+      </div>
+      <div class="hc-stars">★★★★★ <span style="font-size:.72rem;color:var(--gr);">4.9 (127 turni)</span></div>
+      <div class="hc-pills">
+        <span class="pill">Maître</span><span class="pill">Sommelier FISAR</span><span class="pill">Fine Dining</span><span class="pill">ITA ●●●●●</span><span class="pill">ENG ●●●●○</span><span class="pill">HACCP</span>
+      </div>
+      <div class="hc-stats">
+        <div class="hcs"><div class="hcs-n">99%</div><div class="hcs-l">Completamento</div></div>
+        <div class="hcs"><div class="hcs-n">&lt;1h</div><div class="hcs-l">Risposta</div></div>
+        <div class="hcs"><div class="hcs-n">0</div><div class="hcs-l">No-show</div></div>
+      </div>
+      <div class="hc-score">
+        <div class="hc-score-n">92</div>
+        <div class="hc-score-l">Match Score — Hotel Excelsior Milano</div>
+        <div class="match-bar"><div class="match-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── STATS ── -->
+<div class="stats">
+  <div class="stats-inner">
+    <div class="stat rv"><div class="stat-n">330k+</div><div class="stat-l">Esercizi target IT</div></div>
+    <div class="stat rv"><div class="stat-n">4</div><div class="stat-l">Tipologie ingaggio</div></div>
+    <div class="stat rv"><div class="stat-n">8</div><div class="stat-l">Agenti AI attivi</div></div>
+    <div class="stat rv"><div class="stat-n">&lt;30'</div><div class="stat-l">Onboarding lavoratore</div></div>
+    <div class="stat rv"><div class="stat-n">85%</div><div class="stat-l">Fill rate target</div></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ── COME FUNZIONA ── -->
+<section class="section" id="come-funziona">
+  <div class="sec-label">Il processo</div>
+  <h2 class="sec-h2">Come funziona<br><em>BarmanMatch.</em></h2>
+  <p class="sec-sub">Un flusso semplice e verificato ispirato ai migliori marketplace del mondo.</p>
+  <div class="how-grid">
+    <div class="how-card c1 rv">
+      <div class="how-n">01</div>
+      <div class="how-ico">📋</div>
+      <div class="how-t">Registrazione & Verifica</div>
+      <p class="how-d">Onboarding completamente digitale: dati, documenti, certificazioni e contratto quadro. Operativo in meno di 30 minuti.</p>
+      <div class="how-steps">
+        <div class="how-step">Inserimento dati e caricamento documenti</div>
+        <div class="how-step">Verifica AI automatica (OCR + liveness)</div>
+        <div class="how-step">Tutorial standard hospitality + quiz</div>
+        <div class="how-step">Profilo live e notifiche attivate</div>
+      </div>
+    </div>
+    <div class="how-card c2 rv">
+      <div class="how-n">02</div>
+      <div class="how-ico">⚡</div>
+      <div class="how-t">Matching Intelligente</div>
+      <p class="how-d">La struttura pubblica il turno (< 5 min). Il motore AI calcola lo score composito su pertinenza, qualità, relazione e reattività.</p>
+      <div class="how-steps">
+        <div class="how-step">Struttura definisce ruolo, data, requisiti, tariffa</div>
+        <div class="how-step">Algoritmo ranking personalizzato</div>
+        <div class="how-step">Notifica push a top-20 lavoratori compatibili</div>
+        <div class="how-step">Primo ad accettare → conferma automatica</div>
+      </div>
+    </div>
+    <div class="how-card c3 rv">
+      <div class="how-n">03</div>
+      <div class="how-ico">⭐</div>
+      <div class="how-t">Lavora, Valuta, Cresci</div>
+      <p class="how-d">Check-in geolocalizzato, chat pre-turno, rating bidirezionale verificato post-turno e pagamento automatico entro 24h.</p>
+      <div class="how-steps">
+        <div class="how-step">Check-in geolocalizzato a inizio/fine turno</div>
+        <div class="how-step">Rating reciproco verificato (solo chi ha lavorato)</div>
+        <div class="how-step">Pagamento automatico via Stripe Connect</div>
+        <div class="how-step">Profile Booster AI con suggerimenti crescita</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── PER CHI ── -->
+<section class="section" id="per-te">
+  <div class="sec-label">Two-sided marketplace</div>
+  <h2 class="sec-h2">Costruito per <em>entrambi.</em></h2>
+  <p class="sec-sub">Ogni lato del marketplace ha la propria dashboard dedicata, progettata per le sue esigenze specifiche.</p>
+  <div class="two-side">
+
+    <!-- LAVORATORE -->
+    <div class="side-card worker rv">
+      <div class="side-ico">👤</div>
+      <div class="side-h">Per i Professionisti</div>
+      <p class="side-desc">Chef, bartender, camerieri, receptionist, housekeeping, event staff. Il tuo profilo è il tuo "listing" — ogni elemento migliora la tua visibilità e il tuo ranking.</p>
+      <div class="feat-list">
+        <div class="feat-row">Feed turni compatibili ordinati per pertinenza e tariffa</div>
+        <div class="feat-row">Calendario disponibilità settimanale/bisettimanale</div>
+        <div class="feat-row">Notifiche push per turni last-minute (con premio economico)</div>
+        <div class="feat-row">Wallet: guadagni, storico, anticipo, buste paga</div>
+        <div class="feat-row">Chat in-app con la struttura per briefing pre-turno</div>
+        <div class="feat-row">Check-in digitale geolocalizzato</div>
+        <div class="feat-row">Profile Booster AI — suggerimenti ranking personalizzati</div>
+        <div class="feat-row">Marketplace formazione — corsi certificati per upskilling</div>
+      </div>
+      <div class="profile-mockup">
+        <div class="pm-head">
+          <div class="pm-avatar">🍸</div>
+          <div class="pm-info">
+            <div class="pm-name">Giulia M.</div>
+            <div class="pm-role">Bartender · Roma · ★★★★★ 4.8 (54 turni)</div>
+          </div>
+        </div>
+        <div class="pm-badges">
+          <span class="pm-badge b-top">🏅 Top Rated</span>
+          <span class="pm-badge b-zero">✅ No-Show Zero</span>
+          <span class="pm-badge b-fast">⚡ Fast Responder</span>
+        </div>
+        <div class="pm-grid">
+          <div class="pm-cell"><strong>92%</strong>Accettazione turni</div>
+          <div class="pm-cell"><strong>99%</strong>Completamento</div>
+          <div class="pm-cell"><strong>&lt; 45 min</strong>Risposta media</div>
+          <div class="pm-cell"><strong>HACCP · FIB</strong>Certificazioni</div>
+        </div>
+      </div>
+      <a href="#registrati" class="side-cta">Crea il tuo profilo →</a>
+    </div>
+
+    <!-- STRUTTURA -->
+    <div class="side-card venue rv">
+      <div class="side-ico">🏨</div>
+      <div class="side-h">Per le Strutture</div>
+      <p class="side-desc">Hotel, resort, ristoranti, catering, event venue. La dashboard è la tua extranet per gestire tutto il fabbisogno di personale — ispirata direttamente a Booking.com.</p>
+      <div class="feat-list">
+        <div class="feat-row">Turni aperti: crea, gestisci, cancella richieste in < 5 min</div>
+        <div class="feat-row">Roster attivo: chi lavora oggi / questa settimana</div>
+        <div class="feat-row">Le mie preferite: pool fidato di lavoratori ricontattabili</div>
+        <div class="feat-row">Inviti diretti: contatta un lavoratore senza pubblicare l'offerta</div>
+        <div class="feat-row">Analytics: fill rate, no-show, costo medio ora, rating dato</div>
+        <div class="feat-row">Smart Search AI in linguaggio naturale ("cameriere esperto sabato")</div>
+        <div class="feat-row">Opportunity Center: suggerimenti per ridurre i tempi di fill</div>
+        <div class="feat-row">Fatturazione automatica e download fatture</div>
+      </div>
+      <div class="profile-mockup" style="border-color:rgba(201,168,76,.2);background:rgba(201,168,76,.04);">
+        <div style="font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(201,168,76,.6);margin-bottom:.8rem;">Dashboard struttura</div>
+        <div style="display:flex;flex-direction:column;gap:.5rem;">
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;padding:.5rem .6rem;background:rgba(201,168,76,.05);border-radius:6px;border:1px solid rgba(201,168,76,.1);">
+            <span>📋 Turni aperti</span><span style="color:var(--gl);">3 attivi</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;padding:.5rem .6rem;background:rgba(0,229,180,.04);border-radius:6px;border:1px solid rgba(0,229,180,.1);">
+            <span>👥 Roster oggi</span><span style="color:var(--t);">5 confermati</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;padding:.5rem .6rem;background:rgba(139,92,246,.05);border-radius:6px;border:1px solid rgba(139,92,246,.1);">
+            <span>⭐ Fill rate</span><span style="color:var(--vl);">91% (↑3%)</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;padding:.5rem .6rem;background:rgba(255,255,255,.03);border-radius:6px;border:1px solid rgba(255,255,255,.06);">
+            <span>⭐ Le mie preferite</span><span style="color:rgba(244,240,255,.5);">12 salvati</span>
+          </div>
+        </div>
+      </div>
+      <a href="#registrati" class="side-cta">Accedi come struttura →</a>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── INGAGGI ── -->
+<section class="section">
+  <div class="sec-label">Flessibilità totale</div>
+  <h2 class="sec-h2">Quattro tipologie<br><em>di ingaggio.</em></h2>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-top:.5rem;">
+    <div style="background:var(--bg2);border:1px solid rgba(139,92,246,.12);border-radius:var(--r);padding:1.8rem;" class="rv">
+      <div style="font-size:1.5rem;margin-bottom:.7rem;">⚡</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--vl);margin-bottom:.3rem;">On-Demand</div>
+      <div style="font-size:.65rem;color:var(--gr);margin-bottom:.5rem;">Turno singolo · 4–12h</div>
+      <div style="font-size:.7rem;color:rgba(244,240,255,.5);">Freelance / P.IVA. Rinforzo weekend, evento last-minute.</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid rgba(201,168,76,.12);border-radius:var(--r);padding:1.8rem;" class="rv">
+      <div style="font-size:1.5rem;margin-bottom:.7rem;">📅</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--gl);margin-bottom:.3rem;">Short-Term</div>
+      <div style="font-size:.65rem;color:var(--gr);margin-bottom:.5rem;">1 settimana – 3 mesi</div>
+      <div style="font-size:.7rem;color:rgba(244,240,255,.5);">Contratto a termine intermediato. Stagione estiva, fiera.</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid rgba(0,229,180,.12);border-radius:var(--r);padding:1.8rem;" class="rv">
+      <div style="font-size:1.5rem;margin-bottom:.7rem;">🌊</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--t);margin-bottom:.3rem;">Seasonal</div>
+      <div style="font-size:.65rem;color:var(--gr);margin-bottom:.5rem;">3–6 mesi</div>
+      <div style="font-size:.7rem;color:rgba(244,240,255,.5);">Contratto stagionale. Apertura stagione hotel, resort.</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:1.8rem;" class="rv">
+      <div style="font-size:1.5rem;margin-bottom:.7rem;">🎯</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;color:rgba(244,240,255,.7);margin-bottom:.3rem;">Permanent</div>
+      <div style="font-size:.65rem;color:var(--gr);margin-bottom:.5rem;">Indeterminato</div>
+      <div style="font-size:.7rem;color:rgba(244,240,255,.5);">Assunzione diretta intermediata dalla piattaforma. Talent acquisition.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── AI LAYER ── -->
+<section class="section" id="ai">
+  <div class="sec-label">Intelligence layer</div>
+  <h2 class="sec-h2">8 Agenti AI.<br><em>Sempre al lavoro.</em></h2>
+  <p class="sec-sub">Una suite di agenti specializzati opera in background su ogni processo critico — da Claude claude-sonnet-4-6 via API Anthropic, orchestrati con LangChain/LangGraph.</p>
+  <div class="agents-grid">
+    <div class="agent-card rv">
+      <div class="ag-num">Agent 01</div>
+      <div class="ag-ico">🔍</div>
+      <div class="ag-name">Onboarding Verifier</div>
+      <p class="ag-role">Verifica documenti e certificazioni dei nuovi lavoratori in automatico. Riduce il tempo di approvazione da 48h a meno di 2h.</p>
+      <span class="ag-trigger">Trigger: upload documento</span>
+    </div>
+    <div class="agent-card rv">
+      <div class="ag-num">Agent 02</div>
+      <div class="ag-ico">⚖️</div>
+      <div class="ag-name">Matching Engine</div>
+      <p class="ag-role">Calcola il ranking dei lavoratori compatibili per ogni turno. Score composito su pertinenza (40%), qualità (35%), relazione (15%), reattività (10%).</p>
+      <span class="ag-trigger">Trigger: pubblicazione turno</span>
+    </div>
+    <div class="agent-card rv">
+      <div class="ag-num">Agent 03</div>
+      <div class="ag-ico">🔎</div>
+      <div class="ag-name">Smart Search NLU</div>
+      <p class="ag-role">Converte ricerche in linguaggio naturale in query filtrate. "Cameriere esperto fine dining sabato sera zona Navigli" → filtri strutturati automatici.</p>
+      <span class="ag-trigger">Trigger: ricerca struttura</span>
+    </div>
+    <div class="agent-card rv">
+      <div class="ag-num">Agent 04</div>
+      <div class="ag-ico">🚀</div>
+      <div class="ag-name">Profile Booster</div>
+      <p class="ag-role">Analizza il profilo del lavoratore e genera 3–5 suggerimenti concreti per migliorare visibilità e ranking. Impatto stimato quantificato per ogni azione.</p>
+      <span class="ag-trigger">Trigger: accesso profilo</span>
+    </div>
+    <div class="agent-card rv">
+      <div class="ag-num">Agent 05</div>
+      <div class="ag-ico">⭐</div>
+      <div class="ag-name">Review Analyzer</div>
+      <p class="ag-role">Modera le recensioni post-turno prima della pubblicazione. Blocca contenuti inappropriati, estrae topic e sentiment per analytics interna.</p>
+      <span class="ag-trigger">Trigger: invio recensione</span>
+    </div>
+    <div class="agent-card rv">
+      <div class="ag-num">Agent 06</div>
+      <div class="ag-ico">🛡️</div>
+      <div class="ag-name">Fraud & Trust Monitor</div>
+      <p class="ag-role">Monitora in background comportamenti anomali: review bombing, account farming, no-show sistematici, wage manipulation. Escalation automatica.</p>
+      <span class="ag-trigger">Trigger: schedulato h1 + real-time</span>
+    </div>
+    <div class="agent-card rv">
+      <div class="ag-num">Agent 07</div>
+      <div class="ag-ico">💬</div>
+      <div class="ag-name">Support Chatbot</div>
+      <p class="ag-role">Gestisce il supporto in-app per lavoratori e strutture. RAG su knowledge base. Escalation automatica a operatori umani per casi complessi.</p>
+      <span class="ag-trigger">Trigger: apertura chat supporto</span>
+    </div>
+    <div class="agent-card rv">
+      <div class="ag-num">Agent 08</div>
+      <div class="ag-ico">📈</div>
+      <div class="ag-name">Demand Forecaster</div>
+      <p class="ag-role">Prevede il fabbisogno di personale per città e ruoli nelle settimane successive. Alert di carenza proattivi e raccomandazioni recruiting.</p>
+      <span class="ag-trigger">Trigger: domenica sera + eventi</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── WORKFLOW ── -->
+<section class="section">
+  <div class="sec-label">Flussi orchestrati</div>
+  <h2 class="sec-h2">I workflow<br><em>multi-agente.</em></h2>
+  <div class="workflow-grid">
+    <div class="wf-card rv">
+      <div class="wf-letter">A</div>
+      <div class="wf-t">Onboarding nuovo lavoratore</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Form + documenti caricati</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Agent 01 verifica (APPROVED / MANUAL_REVIEW / REJECTED)</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Agent 04 genera suggerimenti profilo iniziali</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Agent 08 controlla domanda attiva in città</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Push: "Ci sono turni disponibili per te a [città]!"</div>
+    </div>
+    <div class="wf-card rv">
+      <div class="wf-letter">B</div>
+      <div class="wf-t">Turno urgente pubblicato</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Struttura pubblica turno con flag urgente</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Agent 03 converte ricerca libera in filtri</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Agent 02 calcola ranking top-20</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Push a top-20 (ogni 5 min scende al successivo)</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Primo che accetta → conferma automatica + chat</div>
+    </div>
+    <div class="wf-card rv">
+      <div class="wf-letter">C</div>
+      <div class="wf-t">Post-turno qualità e pagamento</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Check-out geolocalizzato → calcolo ore effettive</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Entrambi inseriscono recensione testuale</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Agent 05 modera (pubblicazione simultanea)</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Agent 06 check pattern rating in background</div>
+      <div class="wf-step"><span class="wf-arrow">→</span>Stripe Connect: pagamento entro 24h + Agent 04 update</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── PRICING ── -->
+<section class="section" id="pricing">
+  <div class="sec-label">Piano abbonamento strutture</div>
+  <h2 class="sec-h2">Prezzi <em>trasparenti.</em></h2>
+  <p class="sec-sub">Inizia gratis. Scala quando sei pronto. I lavoratori non pagano mai.</p>
+  <div class="pricing-grid">
+    <div class="price-card rv">
+      <div class="price-plan">Starter</div>
+      <div class="price-amount">Gratis<span>/mese</span></div>
+      <div class="price-comm">Commissione: 20% per turno</div>
+      <div class="price-feats">
+        <div class="price-feat">Fino a 5 turni al mese</div>
+        <div class="price-feat">Matching automatico</div>
+        <div class="price-feat">Rating bidirezionale</div>
+        <div class="price-feat">Chat in-app</div>
+      </div>
+      <a href="#registrati" class="price-btn">Inizia gratis</a>
+    </div>
+    <div class="price-card featured rv">
+      <div class="price-plan">Pro</div>
+      <div class="price-amount">€99<span>/mese</span></div>
+      <div class="price-comm">Commissione: 15% per turno</div>
+      <div class="price-feats">
+        <div class="price-feat">Turni illimitati</div>
+        <div class="price-feat">Preferite illimitate</div>
+        <div class="price-feat">Analytics base</div>
+        <div class="price-feat">Opportunity Center</div>
+        <div class="price-feat">Inviti diretti ai lavoratori</div>
+      </div>
+      <a href="#registrati" class="price-btn">Attiva Pro</a>
+    </div>
+    <div class="price-card rv">
+      <div class="price-plan">Business</div>
+      <div class="price-amount">€299<span>/mese</span></div>
+      <div class="price-comm">Commissione: 12% per turno</div>
+      <div class="price-feats">
+        <div class="price-feat">Multi-sede gestite</div>
+        <div class="price-feat">API integrazione PMS</div>
+        <div class="price-feat">Account manager dedicato</div>
+        <div class="price-feat">Smart Search NLU</div>
+        <div class="price-feat">SLA garantito</div>
+      </div>
+      <a href="#registrati" class="price-btn">Contattaci</a>
+    </div>
+    <div class="price-card rv">
+      <div class="price-plan">Enterprise</div>
+      <div class="price-amount">Custom<span>/mese</span></div>
+      <div class="price-comm">Commissione: 8–10% per turno</div>
+      <div class="price-feats">
+        <div class="price-feat">White label disponibile</div>
+        <div class="price-feat">SLA 99.9% uptime</div>
+        <div class="price-feat">Onboarding dedicato</div>
+        <div class="price-feat">Compliance UE personalizzata</div>
+        <div class="price-feat">Integrazione ERP/PMS custom</div>
+      </div>
+      <a href="#registrati" class="price-btn">Richiedi offerta</a>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── ROADMAP ── -->
+<section class="section">
+  <div class="sec-label">Piano di sviluppo</div>
+  <h2 class="sec-h2">La roadmap<br><em>in tre fasi.</em></h2>
+  <div class="rm-grid">
+    <div class="rm-card rv">
+      <div class="rm-phase">Fase 1</div>
+      <div class="rm-title">MVP</div>
+      <div class="rm-period">Mesi 1–4</div>
+      <div class="rm-item">Onboarding lavoratori (registrazione, verifica, profilo)</div>
+      <div class="rm-item">Dashboard struttura (pubblicazione turni, matching)</div>
+      <div class="rm-item">Rating post-turno struttura → lavoratore</div>
+      <div class="rm-item">Pagamenti Stripe Connect settimanali</div>
+      <div class="rm-item">App mobile iOS + Android</div>
+      <div class="rm-item">Pilota: 1 città, 3 verticali (hotel/ristoranti/eventi)</div>
+    </div>
+    <div class="rm-card rv">
+      <div class="rm-phase">Fase 2</div>
+      <div class="rm-title">Growth</div>
+      <div class="rm-period">Mesi 5–9</div>
+      <div class="rm-item">Rating bidirezionale e recensioni pubbliche</div>
+      <div class="rm-item">Roster preferite e inviti diretti</div>
+      <div class="rm-item">Notifiche last-minute con premio economico</div>
+      <div class="rm-item">Opportunity Center / Profile Booster AI</div>
+      <div class="rm-item">Espansione a 5 città italiane</div>
+    </div>
+    <div class="rm-card rv">
+      <div class="rm-phase">Fase 3</div>
+      <div class="rm-title">Scale</div>
+      <div class="rm-period">Mesi 10–18</div>
+      <div class="rm-item">AI Smart Search NLU</div>
+      <div class="rm-item">Marketplace formazione certificata</div>
+      <div class="rm-item">API integrazione PMS hotel</div>
+      <div class="rm-item">Piano Enterprise e white-label</div>
+      <div class="rm-item">Espansione Europa (ES, FR, DE)</div>
+      <div class="rm-item">Badge fedeltà lavoratori (Genius-like)</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── COMPLIANCE ── -->
+<div class="compliance">
+  <div class="comp-inner">
+    <div class="sec-label">Framework legale IT/UE</div>
+    <h2 class="sec-h2" style="margin-bottom:.3rem;">Compliance <em>integrata.</em></h2>
+    <div class="comp-grid">
+      <div class="comp-item rv">
+        <div class="comp-ico">⚖️</div>
+        <div><div class="comp-t">D.Lgs. 81/2015 & Decreto Dignità</div><div class="comp-d">Lavoro tramite piattaforme digitali — modello ibrido freelance / contratto a termine intermediato.</div></div>
+      </div>
+      <div class="comp-item rv">
+        <div class="comp-ico">🇪🇺</div>
+        <div><div class="comp-t">Direttiva UE 2024/2831</div><div class="comp-d">Trasparenza algoritmica e diritti lavoratori piattaforme. Ogni decisione automatica è loggata e spiegabile.</div></div>
+      </div>
+      <div class="comp-item rv">
+        <div class="comp-ico">🔒</div>
+        <div><div class="comp-t">GDPR</div><div class="comp-d">Trattamento dati personali lavoratori e strutture conforme al Regolamento UE 2016/679.</div></div>
+      </div>
+      <div class="comp-item rv">
+        <div class="comp-ico">🏛️</div>
+        <div><div class="comp-t">INAIL & INPS</div><div class="comp-d">Copertura assicurativa per turni on-demand (modello DAS o assicurazione per singola prestazione).</div></div>
+      </div>
+      <div class="comp-item rv">
+        <div class="comp-ico">📋</div>
+        <div><div class="comp-t">CCNL Turismo</div><div class="comp-d">Compensi minimi rispettano i tabellari CCNL Turismo / Pubblici Esercizi per ruolo e inquadramento.</div></div>
+      </div>
+      <div class="comp-item rv">
+        <div class="comp-ico">🧾</div>
+        <div><div class="comp-t">Fatturazione elettronica</div><div class="comp-d">Integrazione SDI per fatturazione B2B e per lavoratori con P.IVA. Automatizzata sulla piattaforma.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CTA ── -->
+<section class="cta-section" id="registrati">
+  <div class="sec-label" style="justify-content:center;">Pre-registrazione aperta</div>
+  <h2>Entra per primo<br>nel <em>marketplace.</em></h2>
+  <p>BarmanMatch è in fase beta. Registrati ora per accedere al lancio con accesso prioritario e commissioni di lancio ridotte.</p>
+  <div class="cta-group">
+    <a href="https://wa.me/393468473144?text=Ciao Simone! Sono interessato a BarmanMatch come struttura, vorrei saperne di più." target="_blank" rel="noopener noreferrer" class="btn-str">🏨 Pre-registro Struttura</a>
+    <a href="https://wa.me/393468473144?text=Ciao Simone! Sono un professionista hospitality e voglio pre-registrarmi su BarmanMatch." target="_blank" rel="noopener noreferrer" class="btn-lav">👤 Pre-registro Lavoratore</a>
+  </div>
+  <div style="margin-top:2rem;font-size:.62rem;color:rgba(244,240,255,.25);">Prodotto di Skills Solutions · Fondato da Simone Serra · Sardegna, Italia</div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="foot-in">
+    <div class="foot-brand">BarmanMatch · Skills Solutions</div>
+    <nav class="foot-eco">
+      <a href="../SKILLSOLUTIONS.COM/index.html">✦ Skills Solutions Hub</a>
+      <a href="../BA.IA.SKILLSOLUTIONS.COM/index.html">BA.IA — Bandi AI</a>
+      <a href="../BAD360.SKILLSOLUTIONS.COM/index.html">BAD360 Gestionale</a>
+      <a href="../BAD.SKILLSOLUTIONS.COM/index.html">BAD.S Events</a>
+    </nav>
+    <div class="foot-copy">© 2025-2026 BarmanMatch · Skills Solutions · Simone Serra · Sardegna · Italia</div>
+  </div>
+</footer>
+
+<script src="../SKILLSOLUTIONS.COM/ss-nav.js"></script>
+<script>
+SSNav.init({current:'barmanmatch'});
+
+// Reveal on scroll
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:.08});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>

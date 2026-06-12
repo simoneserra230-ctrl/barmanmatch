@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard Struttura — BarmanMatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+<style>
+.btn-gold{background:var(--g);color:#000;padding:.65rem 1.5rem;border-radius:var(--rp);font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;border:none;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:.4rem;}
+.btn-gold:hover{background:var(--gl);}
+.app-row{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:1rem 1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.5rem;transition:border-color .3s;}
+.app-row:hover{border-color:rgba(139,92,246,.2);}
+.app-worker{flex:1;}
+.app-worker-name{font-weight:600;font-size:.85rem;}
+.app-worker-meta{font-size:.65rem;color:var(--gr);}
+</style>
+</head>
+<body>
+<nav class="app-nav">
+  <a href="../index.html" class="app-nav-brand">BarmanMatch<span id="nav-name">Struttura</span></a>
+  <div class="app-nav-right">
+    <a href="post-shift.html">+ Pubblica turno</a>
+    <button onclick="logout()">Esci</button>
+  </div>
+</nav>
+
+<!-- RATING MODAL -->
+<div class="modal-overlay hidden" id="rating-modal">
+  <div class="modal">
+    <h3>Valuta il lavoratore</h3>
+    <div id="rating-info" style="margin-bottom:1rem;font-size:.78rem;color:var(--gr);"></div>
+    <div class="form-group">
+      <label>Valutazione generale *</label>
+      <div class="stars" id="stars-general"></div>
+      <input type="hidden" id="rating-score" value="0">
+    </div>
+    <div class="form-group">
+      <label>Puntualità</label>
+      <div class="stars" id="stars-punctuality"></div>
+      <input type="hidden" id="rating-punct" value="0">
+    </div>
+    <div class="form-group">
+      <label>Professionalità</label>
+      <div class="stars" id="stars-prof"></div>
+      <input type="hidden" id="rating-prof" value="0">
+    </div>
+    <div class="form-group">
+      <label>Livello tecnico</label>
+      <div class="stars" id="stars-skill"></div>
+      <input type="hidden" id="rating-skill" value="0">
+    </div>
+    <div class="form-group">
+      <label>Commento (facoltativo)</label>
+      <textarea id="rating-comment" placeholder="Come è stato il lavoratore?"></textarea>
+    </div>
+    <div id="rating-alert"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem;">
+      <button class="btn btn-outline btn-sm" onclick="closeRatingModal()">Salta</button>
+      <button class="btn btn-primary" id="btn-submit-rating" data-label="Invia recensione" style="flex:1">Invia recensione</button>
+    </div>
+  </div>
+</div>
+
+<main class="page">
+  <div id="alert-box"></div>
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
+    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--g),var(--gl));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🏨</div>
+    <div style="flex:1;">
+      <h1 id="profile-name">Caricamento…</h1>
+      <div id="profile-meta" style="font-size:.7rem;color:var(--gr);margin-top:.2rem;"></div>
+    </div>
+    <a href="post-shift.html" class="btn-gold">+ Pubblica turno</a>
+  </div>
+
+  <!-- STATS -->
+  <div class="stat-row" id="venue-stats" style="margin-bottom:2rem;"></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('open')">📋 Turni aperti</button>
+    <button class="tab" onclick="switchTab('completed')">✓ Completati</button>
+    <button class="tab" onclick="switchTab('favorites')">⭐ Preferiti</button>
+  </div>
+
+  <!-- TAB: TURNI APERTI -->
+  <div id="tab-open">
+    <div id="open-shifts-list">
+      <div class="page-loader"><div class="spinner"></div><p>Caricamento turni…</p></div>
+    </div>
+  </div>
+
+  <!-- TAB: COMPLETATI -->
+  <div id="tab-completed" style="display:none;">
+    <div id="completed-shifts-list">
+      <div class="page-loader"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- TAB: PREFERITI -->
+  <div id="tab-favorites" style="display:none;">
+    <div id="favorites-list">
+      <div class="page-loader"><div class="spinner"></div></div>
+    </div>
+  </div>
+</main>
+
+<script src="../shared/api.js"></script>
+<script>
+if (!requireAuth("../index.html")) throw new Error("not auth");
+
+let profile = null;
+let currentRatingAppId = null;
+
+async function init() {
+  // Flash da post-shift
+  const flash = sessionStorage.getItem("bm_flash");
+  if (flash) { showAlert("alert-box", flash, "success"); sessionStorage.removeItem("bm_flash"); }
+
+  try {
+    profile = await API.get("/api/venues/profile/me");
+    renderHeader();
+    loadShifts();
+  } catch(e) {
+    if (e.message.includes("404")) {
+      showAlert("alert-box", "Completa il tuo profilo struttura.", "info");
+    }
+  }
+}
+
+function renderHeader() {
+  document.getElementById("profile-name").textContent = profile.name;
+  document.getElementById("nav-name").textContent = profile.name.split(" ")[0];
+  document.getElementById("profile-meta").innerHTML =
+    `${profile.venue_type?.replace("_"," ")} · ${profile.city} · Piano: <span class="badge badge-gold">${profile.plan}</span> · Verificato: ${profile.is_verified ? "✅" : "⏳"}`;
+}
+
+async function loadShifts() {
+  try {
+    const shifts = await API.get("/api/shifts/mine");
+    const open      = shifts.filter(s => ["open","filled"].includes(s.status));
+    const completed = shifts.filter(s => s.status === "completed");
+    const cancelled = shifts.filter(s => s.status === "cancelled");
+
+    // Stats
+    const totalApps = open.reduce((acc, s) => acc + (s.shift_applications?.length || 0), 0);
+    document.getElementById("venue-stats").innerHTML = `
+      <div class="stat-mini"><div class="stat-mini-n">${open.length}</div><div class="stat-mini-l">Turni aperti</div></div>
+      <div class="stat-mini"><div class="stat-mini-n">${totalApps}</div><div class="stat-mini-l">Candidature</div></div>
+      <div class="stat-mini"><div class="stat-mini-n">${completed.length}</div><div class="stat-mini-l">Completati</div></div>
+    `;
+
+    renderOpenShifts(open);
+    renderCompletedShifts(completed);
+  } catch(e) {
+    document.getElementById("open-shifts-list").innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+}
+
+function renderOpenShifts(shifts) {
+  const el = document.getElementById("open-shifts-list");
+  if (!shifts.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">📋</div><div class="empty-text">Nessun turno aperto.<br><a href="post-shift.html" style="color:var(--gl);">Pubblica il tuo primo turno →</a></div></div>`;
+    return;
+  }
+  el.innerHTML = shifts.map(s => {
+    const apps = s.shift_applications || [];
+    const confirmed = apps.filter(a => a.status === "confirmed");
+    const pending   = apps.filter(a => a.status === "pending");
+    return `
+    <div class="card-sm" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.3rem;">
+            <div class="shift-role">${s.role}</div>
+            ${statusBadge(s.status)}
+            ${s.is_urgent ? `<span class="badge badge-gold">URGENTE</span>` : ""}
+          </div>
+          <div class="shift-meta">
+            📅 <span>${formatDate(s.date)}</span> ·
+            🕐 <span>${formatTime(s.start_time)}–${formatTime(s.end_time)}</span> ·
+            💶 <span>€${s.hourly_rate}/h</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;">
+          <button class="btn btn-danger btn-sm" onclick="cancelShift('${s.id}')">Cancella</button>
+          ${s.status === "filled" ? `<button class="btn btn-primary btn-sm" onclick="markCompleted('${s.id}')">✓ Completato</button>` : ""}
+        </div>
+      </div>
+
+      <!-- Candidature -->
+      ${pending.length > 0 ? `
+      <div style="font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(244,240,255,.3);margin-bottom:.5rem;">
+        ${pending.length} candidature in attesa
+      </div>
+      ${pending.map(a => {
+        const w = a.worker_profiles || {};
+        return `
+        <div class="app-row">
+          <div class="app-worker">
+            <div class="app-worker-name">${w.full_name || "Lavoratore"}</div>
+            <div class="app-worker-meta">
+              ${(w.roles||[]).join(", ")} · ${w.city || "—"} ·
+              ★ ${w.rating_avg?.toFixed(1) || "Nuovo"} ·
+              Match: ${a.match_score || "—"}%
+            </div>
+          </div>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-primary btn-sm" onclick="confirmWorker('${s.id}','${a.id}','${w.full_name||""}')">Conferma</button>
+            <button class="btn btn-outline btn-sm" onclick="rejectWorker('${a.id}')">Rifiuta</button>
+          </div>
+        </div>`;
+      }).join("")}` : ""}
+
+      ${confirmed.length > 0 ? `
+      <div style="font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(52,211,153,.5);margin-bottom:.5rem;">
+        ${confirmed.length} confermato/i
+      </div>
+      ${confirmed.map(a => {
+        const w = a.worker_profiles || {};
+        return `
+        <div class="app-row" style="border-color:rgba(52,211,153,.15);">
+          <div class="app-worker">
+            <div class="app-worker-name">✓ ${w.full_name || "Lavoratore"}</div>
+            <div class="app-worker-meta">${(w.roles||[]).join(", ")} · ${w.city || "—"} · ★ ${w.rating_avg?.toFixed(1) || "Nuovo"}</div>
+          </div>
+          <span class="badge badge-green">Confermato</span>
+        </div>`;
+      }).join("")}` : ""}
+
+      ${!apps.length ? `<div style="font-size:.72rem;color:rgba(244,240,255,.2);text-align:center;padding:.5rem;">Nessuna candidatura ancora — il matching notificherà i lavoratori compatibili</div>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function renderCompletedShifts(shifts) {
+  const el = document.getElementById("completed-shifts-list");
+  if (!shifts.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">✓</div><div class="empty-text">Nessun turno completato ancora.</div></div>`;
+    return;
+  }
+  el.innerHTML = shifts.map(s => {
+    const confirmed = (s.shift_applications||[]).filter(a => a.status === "completed");
+    return `
+    <div class="card-sm" style="margin-bottom:1rem;border-color:rgba(52,211,153,.1);">
+      <div class="shift-role" style="color:var(--t);">${s.role}</div>
+      <div class="shift-meta">📅 ${formatDate(s.date)} · 🕐 ${formatTime(s.start_time)}–${formatTime(s.end_time)} · 💶 €${s.hourly_rate}/h</div>
+      ${confirmed.map(a => {
+        const w = a.worker_profiles || {};
+        return `
+        <div class="app-row" style="margin-top:.8rem;">
+          <div class="app-worker">
+            <div class="app-worker-name">${w.full_name || "Lavoratore"}</div>
+            <div class="app-worker-meta">${(w.roles||[]).join(", ")} · ★ ${w.rating_avg?.toFixed(1) || "Nuovo"}</div>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="openRatingModal('${a.id}','${w.full_name||"il lavoratore"}')">⭐ Valuta</button>
+        </div>`;
+      }).join("")}
+    </div>`;
+  }).join("");
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────
+async function confirmWorker(shiftId, appId, workerName) {
+  if (!confirm(`Confermare ${workerName} per questo turno?`)) return;
+  try {
+    await API.post(`/api/shifts/${shiftId}/confirm`, { application_id: appId });
+    showAlert("alert-box", `${workerName} confermato!`, "success");
+    loadShifts();
+  } catch(e) { showAlert("alert-box", e.message); }
+}
+
+async function rejectWorker(appId) {
+  try {
+    await API.patch(`/api/shifts/application/${appId}`, { status: "rejected" });
+    loadShifts();
+  } catch(e) { showAlert("alert-box", e.message); }
+}
+
+async function cancelShift(shiftId) {
+  if (!confirm("Cancellare questo turno?")) return;
+  try {
+    await API.delete(`/api/shifts/${shiftId}`);
+    showAlert("alert-box", "Turno cancellato", "success");
+    loadShifts();
+  } catch(e) { showAlert("alert-box", e.message); }
+}
+
+async function markCompleted(shiftId) {
+  if (!confirm("Segnare il turno come completato? Questo abiliterà la valutazione dei lavoratori.")) return;
+  try {
+    await API.post(`/api/shifts/${shiftId}/complete`);
+    showAlert("alert-box", "Turno completato. Ora puoi valutare i lavoratori.", "success");
+    loadShifts();
+    switchTab("completed");
+  } catch(e) { showAlert("alert-box", e.message); }
+}
+
+async function loadFavorites() {
+  try {
+    const favs = await API.get("/api/venues/favorites");
+    const el = document.getElementById("favorites-list");
+    if (!favs.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-ico">⭐</div><div class="empty-text">Nessun lavoratore preferito ancora.<br>Salva i tuoi lavoratori di fiducia dopo ogni turno.</div></div>`;
+      return;
+    }
+    el.innerHTML = favs.map(f => {
+      const w = f.worker_profiles || {};
+      return `
+      <div class="card-sm" style="margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--v),var(--vl));display:flex;align-items:center;justify-content:center;">👤</div>
+          <div style="flex:1;">
+            <div style="font-weight:600;">${w.full_name || "Lavoratore"}</div>
+            <div style="font-size:.65rem;color:var(--gr);">${(w.roles||[]).join(", ")} · ${w.city||"—"} · ★ ${w.rating_avg?.toFixed(1)||"Nuovo"} (${w.rating_count||0} turni)</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="removeFav('${w.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join("");
+  } catch(e) { document.getElementById("favorites-list").innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+}
+
+async function removeFav(workerId) {
+  try {
+    await API.delete(`/api/venues/favorites/${workerId}`);
+    loadFavorites();
+  } catch(e) { showAlert("alert-box", e.message); }
+}
+
+// ── RATING ────────────────────────────────────────────────────────
+function openRatingModal(appId, workerName) {
+  currentRatingAppId = appId;
+  document.getElementById("rating-info").textContent = `Valuta ${workerName}`;
+  buildStars("stars-general",     "rating-score");
+  buildStars("stars-punctuality", "rating-punct");
+  buildStars("stars-prof",        "rating-prof");
+  buildStars("stars-skill",       "rating-skill");
+  document.getElementById("rating-comment").value = "";
+  document.getElementById("rating-alert").innerHTML = "";
+  document.getElementById("rating-modal").classList.remove("hidden");
+}
+
+function closeRatingModal() {
+  document.getElementById("rating-modal").classList.add("hidden");
+  currentRatingAppId = null;
+}
+
+function buildStars(containerId, inputId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = [1,2,3,4,5].map(n =>
+    `<span class="star inactive" data-n="${n}" onclick="setStars('${containerId}','${inputId}',${n})">★</span>`
+  ).join("");
+}
+
+function setStars(containerId, inputId, n) {
+  document.getElementById(inputId).value = n;
+  document.querySelectorAll(`#${containerId} .star`).forEach(s => {
+    s.classList.toggle("active",   parseInt(s.dataset.n) <= n);
+    s.classList.toggle("inactive", parseInt(s.dataset.n) >  n);
+  });
+}
+
+document.getElementById("btn-submit-rating").addEventListener("click", async () => {
+  const score = parseInt(document.getElementById("rating-score").value);
+  if (!score) {
+    document.getElementById("rating-alert").innerHTML = '<div class="alert alert-error">Inserisci almeno la valutazione generale</div>';
+    return;
+  }
+  setLoading("btn-submit-rating", true);
+  try {
+    await API.post("/api/ratings", {
+      application_id: currentRatingAppId,
+      score,
+      punctuality:     parseInt(document.getElementById("rating-punct").value) || null,
+      professionalism: parseInt(document.getElementById("rating-prof").value)  || null,
+      skill_level:     parseInt(document.getElementById("rating-skill").value) || null,
+      comment: document.getElementById("rating-comment").value.trim() || null,
+    });
+    closeRatingModal();
+    showAlert("alert-box", "Recensione inviata. Aggiorna il profilo del lavoratore.", "success");
+    loadShifts();
+  } catch(e) {
+    document.getElementById("rating-alert").innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+    setLoading("btn-submit-rating", false);
+  }
+});
+
+// ── TABS ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  ["open","completed","favorites"].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === name ? "" : "none";
+  });
+  document.querySelectorAll(".tab").forEach((btn, i) => {
+    btn.classList.toggle("active", ["open","completed","favorites"][i] === name);
+  });
+  if (name === "favorites") loadFavorites();
+}
+
+function logout() { clearSession(); window.location.href = "../index.html"; }
+
+init();
+</script>
+</body>
+</html>

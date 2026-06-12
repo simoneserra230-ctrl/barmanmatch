@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Registrati come lavoratore — BarmanMatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<nav class="app-nav">
+  <a href="../index.html" class="app-nav-brand">BarmanMatch<span>Registrazione Lavoratore</span></a>
+  <div class="app-nav-right"><a href="login.html">Hai già un account? Accedi</a></div>
+</nav>
+
+<main class="page-sm">
+  <div style="text-align:center;margin-bottom:2rem;">
+    <div style="font-size:2rem;margin-bottom:.5rem;">👤</div>
+    <h1>Crea il tuo profilo</h1>
+    <p style="font-size:.78rem;color:var(--gr);margin-top:.4rem;">Registrati in 2 minuti. Inizia a ricevere turni compatibili.</p>
+  </div>
+
+  <div id="alert-box"></div>
+
+  <div class="card">
+    <form id="reg-form">
+      <!-- STEP 1: Credenziali -->
+      <div id="step-1">
+        <div style="font-size:.52rem;letter-spacing:.25em;text-transform:uppercase;color:var(--vl);margin-bottom:1rem;">Passo 1 di 2 — Credenziali</div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="email" required placeholder="la@tua.email">
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" id="password" required placeholder="min. 8 caratteri" minlength="8">
+        </div>
+        <button type="button" class="btn btn-primary btn-full" id="btn-step1" data-label="Continua →">Continua →</button>
+      </div>
+
+      <!-- STEP 2: Profilo -->
+      <div id="step-2" style="display:none;">
+        <div style="font-size:.52rem;letter-spacing:.25em;text-transform:uppercase;color:var(--vl);margin-bottom:1rem;">Passo 2 di 2 — Il tuo profilo</div>
+        <div class="form-group">
+          <label>Nome completo *</label>
+          <input type="text" id="full_name" required placeholder="Mario Rossi">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Telefono</label>
+            <input type="text" id="phone" placeholder="+39 333 123 4567">
+          </div>
+          <div class="form-group">
+            <label>Città *</label>
+            <input type="text" id="city" required placeholder="Milano">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Ruoli (premi Invio per aggiungere) *</label>
+          <div class="pills-wrap" id="roles-wrap">
+            <input type="text" class="pills-input" id="roles-input" placeholder="bartender, cameriere, chef…">
+          </div>
+          <input type="hidden" id="roles-val">
+        </div>
+        <div class="form-group">
+          <label>Competenze (premi Invio)</label>
+          <div class="pills-wrap" id="skills-wrap">
+            <input type="text" class="pills-input" id="skills-input" placeholder="cocktail, HACCP, wine service…">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Certificazioni (premi Invio)</label>
+          <div class="pills-wrap" id="certs-wrap">
+            <input type="text" class="pills-input" id="certs-input" placeholder="FIB, HACCP, Sommelier…">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Anni esperienza</label>
+            <input type="number" id="years" placeholder="3" min="0" max="40">
+          </div>
+          <div class="form-group">
+            <label>Tariffa minima (€/h)</label>
+            <input type="number" id="rate" placeholder="12" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Presentazione breve</label>
+          <textarea id="bio" placeholder="Racconta la tua esperienza in poche righe…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="btn-submit" data-label="Crea il mio profilo ✓">Crea il mio profilo ✓</button>
+        <div style="text-align:center;margin-top:.8rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="showStep(1)">← Indietro</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="divider-label"><span>oppure</span></div>
+  <p style="text-align:center;font-size:.7rem;color:var(--gr);">Hai già un account? <a href="login.html" style="color:var(--vl);">Accedi qui</a></p>
+</main>
+
+<script src="../shared/api.js"></script>
+<script>
+const pillsState = { roles: [], skills: [], certs: [] };
+
+function makePills(wrapId, inputId, key) {
+  const wrap = document.getElementById(wrapId);
+  const inp  = document.getElementById(inputId);
+  inp.addEventListener("keydown", e => {
+    if (e.key !== "Enter" && e.key !== ",") return;
+    e.preventDefault();
+    const val = inp.value.trim();
+    if (!val || pillsState[key].includes(val)) return;
+    pillsState[key].push(val);
+    inp.value = "";
+    renderPills(wrapId, inputId, key);
+  });
+}
+
+function renderPills(wrapId, inputId, key) {
+  const wrap = document.getElementById(wrapId);
+  const inp  = document.getElementById(inputId);
+  wrap.innerHTML = "";
+  pillsState[key].forEach(v => {
+    const tag = document.createElement("span");
+    tag.className = "pill-tag";
+    tag.innerHTML = `${v}<button type="button" onclick="removePill('${wrapId}','${inputId}','${key}','${v}')">×</button>`;
+    wrap.appendChild(tag);
+  });
+  wrap.appendChild(inp);
+  inp.focus();
+}
+
+function removePill(wrapId, inputId, key, val) {
+  pillsState[key] = pillsState[key].filter(v => v !== val);
+  renderPills(wrapId, inputId, key);
+}
+
+function showStep(n) {
+  document.getElementById("step-1").style.display = n === 1 ? "" : "none";
+  document.getElementById("step-2").style.display = n === 2 ? "" : "none";
+}
+
+// Step 1 → 2
+document.getElementById("btn-step1").addEventListener("click", () => {
+  const email = document.getElementById("email").value.trim();
+  const pass  = document.getElementById("password").value;
+  if (!email || !pass || pass.length < 8) {
+    showAlert("alert-box", "Inserisci email e password (min. 8 caratteri)");
+    return;
+  }
+  showStep(2);
+});
+
+// Pills
+makePills("roles-wrap",  "roles-input",  "roles");
+makePills("skills-wrap", "skills-input", "skills");
+makePills("certs-wrap",  "certs-input",  "certs");
+
+// Submit
+document.getElementById("reg-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (pillsState.roles.length === 0) {
+    showAlert("alert-box", "Aggiungi almeno un ruolo (es: bartender)");
+    showStep(2);
+    return;
+  }
+
+  const email = document.getElementById("email").value.trim();
+  const pass  = document.getElementById("password").value;
+  setLoading("btn-submit", true);
+
+  try {
+    // 1. Registra auth
+    const authRes = await API.post("/api/auth/register", {
+      email, password: pass, role: "worker"
+    });
+
+    // 2. Login per ottenere il token
+    const loginRes = await API.post("/api/auth/login", {
+      email, password: pass, role: "worker"
+    });
+    setSession(loginRes);
+
+    // 3. Crea profilo
+    await API.post("/api/workers/profile", {
+      full_name:        document.getElementById("full_name").value.trim(),
+      phone:            document.getElementById("phone").value.trim() || null,
+      city:             document.getElementById("city").value.trim(),
+      roles:            pillsState.roles,
+      skills:           pillsState.skills,
+      certifications:   pillsState.certs,
+      years_experience: parseInt(document.getElementById("years").value) || 0,
+      hourly_rate_min:  parseFloat(document.getElementById("rate").value) || null,
+      bio:              document.getElementById("bio").value.trim() || null,
+    });
+
+    window.location.href = "dashboard.html";
+  } catch (err) {
+    showAlert("alert-box", err.message || "Errore durante la registrazione");
+    setLoading("btn-submit", false);
+  }
+});
+</script>
+</body>
+</html>

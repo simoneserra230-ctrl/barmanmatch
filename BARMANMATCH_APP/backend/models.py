@@ -1,0 +1,100 @@
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from datetime import date, time
+
+
+# ── AUTH ──────────────────────────────────────────────────────────
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    role: str  # 'worker' | 'venue'
+
+
+# ── WORKER ────────────────────────────────────────────────────────
+class WorkerProfileCreate(BaseModel):
+    full_name: str
+    phone: Optional[str] = None
+    city: str
+    roles: list[str]
+    skills: list[str] = []
+    certifications: list[str] = []
+    years_experience: int = 0
+    bio: Optional[str] = None
+    hourly_rate_min: Optional[float] = None
+
+
+class WorkerProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    roles: Optional[list[str]] = None
+    skills: Optional[list[str]] = None
+    certifications: Optional[list[str]] = None
+    years_experience: Optional[int] = None
+    bio: Optional[str] = None
+    hourly_rate_min: Optional[float] = None
+
+
+# ── VENUE ─────────────────────────────────────────────────────────
+class VenueProfileCreate(BaseModel):
+    name: str
+    phone: Optional[str] = None
+    city: str
+    venue_type: str
+    address: Optional[str] = None
+    description: Optional[str] = None
+
+
+class VenueProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    venue_type: Optional[str] = None
+    address: Optional[str] = None
+    description: Optional[str] = None
+
+
+# ── SHIFTS ────────────────────────────────────────────────────────
+class ShiftCreate(BaseModel):
+    role: str
+    date: date
+    start_time: time
+    end_time: time
+    hourly_rate: float
+    city: str
+    requirements: list[str] = []
+    description: Optional[str] = None
+    dress_code: Optional[str] = None
+    spots: int = 1
+    is_urgent: bool = False
+
+
+class ShiftUpdate(BaseModel):
+    description: Optional[str] = None
+    dress_code: Optional[str] = None
+    hourly_rate: Optional[float] = None
+    is_urgent: Optional[bool] = None
+    status: Optional[str] = None
+
+
+# ── APPLICATIONS ─────────────────────────────────────────────────
+class ApplyRequest(BaseModel):
+    contract_accepted: bool = True
+
+
+class ConfirmApplicationRequest(BaseModel):
+    application_id: str
+
+
+# ── RATINGS ──────────────────────────────────────────────────────
+class RatingCreate(BaseModel):
+    application_id: str
+    score: int
+    comment: Optional[str] = None
+    # Per venue→worker
+    punctuality: Optional[int] = None
+    professionalism: Optional[int] = None
+    skill_level: Optional[int] = None
+    # Per worker→venue
+    work_environment: Optional[int] = None
+    payment_punctuality: Optional[int] = None
