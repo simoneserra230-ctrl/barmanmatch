@@ -183,27 +183,61 @@ function renderWorkerOnboard(){
     if(r.ok){ toast('✅ Profilo creato'); render(); } else { err.textContent=(r.data&&r.data.detail)||'Errore'; err.style.display='block'; }
   };
 }
+var WS_ROWS=[];
 async function workerShifts(){
   var box=document.getElementById('tabbody');
   var r=await api('/api/matching/worker/shifts');
   if(!r.ok){ box.innerHTML='<div class="empty">Errore nel caricamento.</div>'; return; }
-  var rows=r.data||[];
-  if(!rows.length){ box.innerHTML='<div class="empty">Nessun turno aperto al momento. Torna più tardi.</div>'; return; }
-  box.innerHTML=rows.map(function(s){
-    var v=s.venue_profiles||{};
-    return '<div class="card"><div class="hd"><div><b>'+esc(s.role)+'</b> · '+esc(v.name||'Struttura')+' <span class="muted">('+esc(s.city)+')</span></div>'
-      +'<span class="score" style="color:var(--vl)">'+(s.match_score||0)+'</span></div>'
-      +'<div class="muted">📅 '+dt(s.date)+' · '+hhmm(s.start_time)+'–'+hhmm(s.end_time)+' · '+eur(s.hourly_rate)+'/h'+(s.is_urgent?' · <span class="p-red pill">URGENTE</span>':'')+'</div>'
-      +(s.requirements&&s.requirements.length?'<div class="muted" style="margin-top:4px">Requisiti: '+s.requirements.map(esc).join(', ')+'</div>':'')
-      +(s.description?'<div style="margin-top:6px">'+esc(s.description)+'</div>':'')
-      +'<div class="row" style="margin-top:10px">'+(s.already_applied
-          ?'<span class="pill p-dim">✓ Già candidato</span>'
-          :'<button class="btn sm" data-act="apply" data-id="'+s.id+'">Candidati</button>')+'</div></div>';
-  }).join('');
-  box.querySelectorAll('[data-act="apply"]').forEach(function(b){ b.onclick=async function(){
+  WS_ROWS=r.data||[];
+  box.innerHTML=
+    '<div class="card" style="position:sticky;top:98px;z-index:10"><div class="row">'
+    +'<input id="f-city" placeholder="📍 Città" style="flex:1;min-width:110px">'
+    +'<input id="f-role" placeholder="🔎 Ruolo" style="flex:1;min-width:110px">'
+    +'<select id="f-sort" style="flex:1;min-width:140px"><option value="match">Ordina: Miglior match</option><option value="pay">Paga più alta</option><option value="date">Data più vicina</option></select>'
+    +'</div><div class="muted" id="f-count" style="margin-top:6px"></div></div>'
+    +'<div id="ws-list"></div>';
+  ['f-city','f-role'].forEach(function(id){ document.getElementById(id).addEventListener('input',wsRender); });
+  document.getElementById('f-sort').addEventListener('change',wsRender);
+  wsRender();
+}
+function wsRender(){
+  var city=(val('f-city')||'').toLowerCase(), role=(val('f-role')||'').toLowerCase(), sort=val('f-sort')||'match';
+  var rows=WS_ROWS.filter(function(s){ return (!city||(s.city||'').toLowerCase().indexOf(city)>=0) && (!role||(s.role||'').toLowerCase().indexOf(role)>=0); });
+  rows.sort(function(a,b){
+    if(sort==='pay') return (b.hourly_rate||0)-(a.hourly_rate||0);
+    if(sort==='date') return String(a.date||'').localeCompare(String(b.date||''));
+    return (b.match_score||0)-(a.match_score||0);
+  });
+  var cnt=document.getElementById('f-count'); if(cnt) cnt.textContent=rows.length+' turni'+(WS_ROWS.length!==rows.length?(' su '+WS_ROWS.length):'')+' disponibili';
+  var list=document.getElementById('ws-list');
+  list.innerHTML = rows.length ? rows.map(bookingShiftCard).join('') : '<div class="empty">Nessun turno con questi filtri.</div>';
+  list.querySelectorAll('[data-act="apply"]').forEach(function(b){ b.onclick=async function(){
     var r=await api('/api/shifts/'+b.dataset.id+'/apply',{method:'POST',body:JSON.stringify({contract_accepted:true})});
-    if(r.ok){ toast('✅ Candidatura inviata (match '+(r.data.match_score||'')+')'); workerShifts(); } else toast((r.data&&r.data.detail)||'Errore');
+    if(r.ok){ toast('✅ Candidatura inviata'); workerShifts(); } else toast((r.data&&r.data.detail)||'Errore');
   };});
+}
+function scoreBadge(score){
+  var s=Number(score)||0;
+  var lbl=s>=85?'Ottimo match':s>=70?'Buon match':s>=50?'Discreto':'Base';
+  var col=s>=85?'var(--green)':s>=70?'var(--teal)':s>=50?'var(--orange)':'var(--txt3)';
+  return '<div style="display:flex;align-items:center;gap:8px"><div style="background:'+col+';color:#08121a;font-family:Syne;font-weight:800;font-size:15px;padding:6px 9px;border-radius:8px 8px 8px 2px;min-width:34px;text-align:center">'+s+'</div><div style="font-size:11px;color:'+col+';font-weight:700;line-height:1.2">'+lbl+'</div></div>';
+}
+function bookingShiftCard(s){
+  var v=s.venue_profiles||{};
+  var cues=[];
+  if(s.is_urgent) cues.push('<span class="pill p-red">🔥 Urgente</span>');
+  if((s.match_score||0)>=85) cues.push('<span class="pill p-gold">Molto richiesto</span>');
+  cues.push('<span class="pill p-dim">'+(s.spots>1?(s.spots+' posti'):'1 posto')+'</span>');
+  return '<div class="card"><div class="hd">'
+    +'<div><b style="font-size:15px">'+esc(s.role)+'</b><div class="muted">'+esc(v.name||'Struttura')+' · 📍 '+esc(s.city)+'</div></div>'
+    +scoreBadge(s.match_score)+'</div>'
+    +'<div class="row" style="margin:8px 0">'+cues.join('')+'</div>'
+    +'<div class="muted">📅 '+dt(s.date)+' · '+hhmm(s.start_time)+'–'+hhmm(s.end_time)+'</div>'
+    +'<div style="font-family:Syne;font-weight:800;font-size:19px;margin:6px 0;color:var(--gl)">'+eur(s.hourly_rate)+'<span style="font-size:12px;color:var(--txt3);font-family:DM Sans">/ora</span></div>'
+    +'<div class="muted" style="font-size:11.5px;color:var(--green)">🔒 pagamento garantito in escrow · ✓ tariffa a norma CCNL</div>'
+    +(s.requirements&&s.requirements.length?'<div class="muted" style="margin-top:4px">Richiesto: '+s.requirements.map(esc).join(', ')+'</div>':'')
+    +(s.description?'<div style="margin-top:6px">'+esc(s.description)+'</div>':'')
+    +'<div class="row" style="margin-top:10px">'+(s.already_applied?'<span class="pill p-green">✓ Già candidato</span>':'<button class="btn" data-act="apply" data-id="'+s.id+'">Candidati ora</button>')+'</div></div>';
 }
 async function workerApps(){
   var box=document.getElementById('tabbody');
@@ -350,11 +384,12 @@ async function venueEvents(){
     +'<div class="field"><label>Descrizione</label><textarea id="e-desc" rows="2"></textarea></div>'
     +'<div id="e-err" class="err" style="display:none"></div><button id="e-save" class="btn gold">Pubblica evento</button></div>';
   var mine=await api('/api/events/mine'); var mineRows=mine.ok?(mine.data||[]):[];
-  var avail=await api('/api/events'); var availRows=avail.ok?(avail.data||[]):[];
+  var avail=await api('/api/events'); EV_AVAIL=avail.ok?(avail.data||[]):[]; EV_HASCOMP=hasComp;
   var claimedRows=[]; if(hasComp){ var cl=await api('/api/events/claimed'); claimedRows=cl.ok?(cl.data||[]):[]; }
   box.innerHTML=bar+form
     +'<h3 style="margin:16px 0 8px">I miei eventi</h3>'+(mineRows.length?mineRows.map(eventOwnerCard).join(''):'<div class="empty">Nessun evento pubblicato.</div>')
-    +'<h3 style="margin:16px 0 8px">Eventi disponibili</h3>'+(availRows.length?availRows.map(function(e){return eventMarketCard(e,hasComp);}).join(''):'<div class="empty">Nessun evento disponibile.</div>')
+    +'<h3 style="margin:16px 0 8px">Eventi disponibili</h3>'
+    +'<div class="card"><div class="row"><input id="ef-city" placeholder="📍 Città" style="flex:1;min-width:110px"><input id="ef-type" placeholder="🔎 Tipo (matrimonio…)" style="flex:1;min-width:120px"><select id="ef-sort" style="flex:1;min-width:150px"><option value="date">Ordina: Data più vicina</option><option value="prio">Prima quelli in prelazione</option></select></div></div><div id="ev-avail"></div>'
     +(hasComp?('<h3 style="margin:16px 0 8px">Eventi presi dalla tua azienda</h3>'+(claimedRows.length?claimedRows.map(eventClaimedCard).join(''):'<div class="empty">Nessun evento preso.</div>')):'');
   if(!hasComp){ var cs=document.getElementById('co-save'); if(cs) cs.onclick=async function(){ if(!val('co-name')){toast('Inserisci il nome azienda');return;} var r=await api('/api/companies',{method:'POST',body:JSON.stringify({name:val('co-name'),city:val('co-city')||null})}); if(r.ok){toast('✅ Azienda registrata');venueEvents();}else toast((r.data&&r.data.detail)||'Errore'); }; }
   document.getElementById('e-save').onclick=async function(){
@@ -365,6 +400,17 @@ async function venueEvents(){
     var r=await api('/api/events',{method:'POST',body:JSON.stringify(b)});
     if(r.ok){ toast('✅ Evento pubblicato'); venueEvents(); } else { err.textContent=(r.data&&r.data.detail)||'Errore'; err.style.display='block'; }
   };
+  ['ef-city','ef-type'].forEach(function(id){ var e=document.getElementById(id); if(e) e.addEventListener('input',evAvailRender); });
+  var es=document.getElementById('ef-sort'); if(es) es.addEventListener('change',evAvailRender);
+  evAvailRender();
+}
+var EV_AVAIL=[], EV_HASCOMP=false;
+function evAvailRender(){
+  var city=(val('ef-city')||'').toLowerCase(), type=(val('ef-type')||'').toLowerCase(), sort=val('ef-sort')||'date';
+  var rows=EV_AVAIL.filter(function(e){ return (!city||(e.city||'').toLowerCase().indexOf(city)>=0) && (!type||(e.event_type||'').toLowerCase().indexOf(type)>=0); });
+  rows.sort(function(a,b){ if(sort==='prio') return (b.in_priority_window?1:0)-(a.in_priority_window?1:0); return String(a.date||'').localeCompare(String(b.date||'')); });
+  var el=document.getElementById('ev-avail'); if(!el) return;
+  el.innerHTML=rows.length?rows.map(function(e){return eventMarketCard(e,EV_HASCOMP);}).join(''):'<div class="empty">Nessun evento con questi filtri.</div>';
   bindEventActions();
 }
 function eventOwnerCard(e){
