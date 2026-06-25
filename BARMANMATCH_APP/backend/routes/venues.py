@@ -20,6 +20,14 @@ def create_profile(body: VenueProfileCreate, uid: str = Depends(require_uid)):
     res = db.table("venue_profiles").insert(payload).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="Errore creazione profilo")
+
+    # avvia subito l'entitlement (trial automatico se configurato)
+    try:
+        from entitlement import _ensure_row
+        _ensure_row(db, uid)
+    except Exception:
+        pass  # non bloccare la creazione profilo se l'entitlement fallisce
+
     return res.data[0]
 
 

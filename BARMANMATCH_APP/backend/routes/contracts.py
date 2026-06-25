@@ -20,6 +20,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from database import get_db
 from auth_middleware import require_uid
+from entitlement import require_active_venue
 from models import ContractCreate, ContractComplete, ContractCancel
 from wage_floor import enforce_floor
 import payments
@@ -67,7 +68,8 @@ def _is_party(c: dict, uid: str) -> bool:
 
 # ── GENERA CONTRATTO (venue, da candidatura confermata) ──────────
 @router.post("/from-application/{application_id}")
-def create_from_application(application_id: str, body: ContractCreate = ContractCreate(), uid: str = Depends(require_uid)):
+def create_from_application(application_id: str, body: ContractCreate = ContractCreate(), uid: str = Depends(require_active_venue)):
+    # require_active_venue: assumere richiede abbonamento struttura attivo (admin bypassa)
     db = get_db()
 
     app = db.table("shift_applications").select("*").eq("id", application_id).single().execute()

@@ -69,7 +69,7 @@ const API = window.BMM_API || (location.protocol==='file:' ? 'http://localhost:8
 const LS='bmm_session';
 function session(){ try{return JSON.parse(localStorage.getItem(LS));}catch(e){return null;} }
 function setSession(s){ localStorage.setItem(LS, JSON.stringify(s)); }
-function logout(){ localStorage.removeItem(LS); location.hash=''; render(); }
+function logout(){ localStorage.removeItem(LS); BILLING=null; location.hash=''; render(); }
 function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)'; clearTimeout(t._t); t._t=setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(-50%) translateY(10px)';},3200); }
 function csv(s){ return (s||'').split(',').map(function(x){return x.trim();}).filter(Boolean); }
@@ -90,6 +90,40 @@ function chk(id){ var e=document.getElementById(id); return !!(e&&e.checked); }
 
 var WAGE=null;
 async function loadWage(){ if(WAGE) return WAGE; var r=await api('/api/policy/wage-floor'); WAGE=r.ok?r.data:{min_hourly:{},default:8.5}; return WAGE; }
+
+// estrae un messaggio leggibile anche quando detail e' un oggetto (es. 402 abbonamento)
+function errMsg(r){
+  var d=r&&r.data&&r.data.detail;
+  if(d&&typeof d==='object') return d.message||d.code||'Operazione non consentita';
+  return d || (r&&r.data&&r.data.message) || 'Errore';
+}
+
+// stato abbonamento (cache di sessione): worker=gratis, venue=entitlement, admin=bypass
+var BILLING=null;
+async function loadBilling(force){ if(BILLING&&!force) return BILLING; var r=await api('/api/billing/status'); BILLING=r.ok?r.data:null; return BILLING; }
+function billingBanner(b){
+  if(!b||b.role!=='venue') return '';
+  if(b.active && b.status==='trialing'){
+    var d=(b.days_left!=null)?(b.days_left+' giorni rimanenti'):'attiva';
+    return '<div class="card" style="border-color:rgba(251,146,60,.4);background:rgba(251,146,60,.08)">'
+      +'<b>⏳ Prova gratuita</b> · '+d+'. Poi serve un abbonamento per pubblicare turni e assumere.'
+      +' <button id="bill-up" class="btn ghost sm" style="margin-left:8px">Attiva piano</button></div>';
+  }
+  if(!b.active){
+    return '<div class="card" style="border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.08)">'
+      +'<b>🔒 Abbonamento struttura non attivo.</b> Puoi navigare, ma non puoi <b>pubblicare turni</b> ne <b>assumere</b> finche il piano non e attivo.'
+      +' <button id="bill-up" class="btn sm" style="margin-left:8px">Attiva piano</button></div>';
+  }
+  return '';
+}
+function wireBillingBanner(){
+  var u=document.getElementById('bill-up');
+  if(u) u.onclick=async function(){
+    var r=await api('/api/billing/checkout',{method:'POST'});
+    if(r.ok && r.data && r.data.url){ location.href=r.data.url; return; }
+    toast(errMsg(r));  // 501 finche Stripe non e configurato: "contatta l'amministratore"
+  };
+}
 
 //──────────────── auth ────────────────
 function renderAuth(){
@@ -134,6 +168,7 @@ function shell(role, navHTML, bodyHTML){
     +'<span class="pill p-green clean">🔒 piattaforma pulita</span><div class="sp"></div>'
     +'<span class="pill '+(role==='venue'?'p-gold':'p-vl')+'">'+(role==='venue'?'🏨 Struttura':'👤 Lavoratore')+'</span>'
     +'<span class="muted" style="font-size:11.5px">'+esc((s&&s.email)||'')+'</span>'
+    +((BILLING&&BILLING.is_admin)?'<a href="#admin" class="btn ghost sm" title="Pannello admin abbonamenti" style="text-decoration:none">⚙︎ Admin</a>':'')
     +'<a href="../../../SKILLSOLUTIONS.COM/index.html" class="btn ghost sm" title="Torna all\'ecosistema SkillSolutions" style="text-decoration:none">✦ Hub</a>'
     +'<button class="btn ghost sm" id="logout">Esci</button></div>'
     +'<div class="nav">'+navHTML+'</div><div class="wrap">'+bodyHTML+'</div>';
@@ -145,10 +180,12 @@ var TAB={worker:'shifts', venue:'shifts'};
 async function render(){
   var s=session();
   if(!s){ renderAuth(); return; }
+  var b=await loadBilling();
+  if(location.hash==='#admin' && b && b.is_admin){ await renderAdmin(); wireShell(); return; }
   if(s.role==='venue') await renderVenue(); else await renderWorker();
   wireShell();
 }
-window.addEventListener('hashchange', function(){ if(!session()) renderAuth(); });
+window.addEventListener('hashchange', function(){ if(!session()){ renderAuth(); return; } render(); });
 
 //──────────────── WORKER ────────────────
 async function renderWorker(){
@@ -284,15 +321,48 @@ async function renderVenue(){
   var prof=await api('/api/venues/profile/me');
   if(prof.status===404){ return renderVenueOnboard(); }
   var tab=TAB.venue;
+  var bill=await loadBilling();
   var nav=['shifts|📋 Turni & candidature','new|➕ Nuovo turno','events|📅 Eventi','contracts|📑 Contratti','profile|🏨 Profilo']
     .map(function(x){var p=x.split('|');return '<button data-tab="'+p[0]+'" class="'+(tab===p[0]?'on':'')+'">'+p[1]+'</button>';}).join('');
-  document.getElementById('app').innerHTML=shell('venue',nav,'<div id="tabbody"><div class="empty">Carico…</div></div>');
+  document.getElementById('app').innerHTML=shell('venue',nav,billingBanner(bill)+'<div id="tabbody"><div class="empty">Carico…</div></div>');
   document.querySelectorAll('.nav [data-tab]').forEach(function(b){ b.onclick=function(){ TAB.venue=b.dataset.tab; render(); }; });
+  wireBillingBanner();
   if(tab==='shifts') venueShifts();
   else if(tab==='new') venueNewShift();
   else if(tab==='events') venueEvents();
   else if(tab==='contracts') venueContracts();
   else venueProfile(prof.data);
+}
+//──────────────── ADMIN · abbonamenti strutture ────────────────
+async function renderAdmin(){
+  var nav='<button class="on">⚙︎ Abbonamenti strutture</button>';
+  document.getElementById('app').innerHTML=shell((session().role||'venue'),nav,'<div id="tabbody"><div class="empty">Carico…</div></div>');
+  var box=document.getElementById('tabbody');
+  var r=await api('/api/billing/admin/venues');
+  if(!r.ok){ box.innerHTML='<div class="card"><div class="err">'+esc(errMsg(r))+'</div></div>'; return; }
+  var rows=r.data||[];
+  var head='<div class="card"><h2 style="margin-bottom:4px">⚙︎ Strutture & abbonamenti</h2>'
+    +'<p class="muted">Sblocco manuale dell\'accesso alle azioni a pagamento (pubblicare turni, assumere). '
+    +'Quando Stripe sara attivo, l\'attivazione sara automatica via abbonamento.</p></div>';
+  if(!rows.length){ box.innerHTML=head+'<div class="empty">Nessuna struttura registrata.</div>'; return; }
+  box.innerHTML=head + rows.map(function(v){
+    var pill=v.active?'<span class="pill p-green">attivo · '+esc(v.status)+'</span>':'<span class="pill p-red">'+esc(v.status)+'</span>';
+    var dl=(v.days_left!=null)?' <span class="muted">('+v.days_left+' gg)</span>':'';
+    return '<div class="card"><div class="hd"><div><b>'+esc(v.name||v.venue_id)+'</b> '
+      +'<span class="muted">'+esc(v.city||'')+(v.email?' · '+esc(v.email):'')+'</span></div>'+pill+dl+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:10px">'
+      +'<button class="btn sm" data-grant="'+esc(v.venue_id)+'">Attiva (Pro)</button>'
+      +'<button class="btn ghost sm" data-revoke="'+esc(v.venue_id)+'">Disattiva</button>'
+      +'</div></div>';
+  }).join('');
+  box.querySelectorAll('[data-grant]').forEach(function(b){ b.onclick=async function(){
+    var r=await api('/api/billing/admin/grant',{method:'POST',body:JSON.stringify({venue_id:b.dataset.grant,plan:'pro'})});
+    if(r.ok){ toast('✅ Struttura attivata'); renderAdmin(); } else toast(errMsg(r));
+  };});
+  box.querySelectorAll('[data-revoke]').forEach(function(b){ b.onclick=async function(){
+    var r=await api('/api/billing/admin/revoke',{method:'POST',body:JSON.stringify({venue_id:b.dataset.revoke})});
+    if(r.ok){ toast('Struttura disattivata'); renderAdmin(); } else toast(errMsg(r));
+  };});
 }
 function renderVenueOnboard(){
   document.getElementById('app').innerHTML=shell('venue','<button class="on">🏨 Crea profilo</button>',
@@ -333,7 +403,8 @@ async function venueNewShift(){
     var b={role:val('s-role'),city:val('s-city'),date:val('s-date'),hourly_rate:parseFloat(val('s-rate')),start_time:val('s-start'),end_time:val('s-end'),spots:parseInt(val('s-spots'))||1,dress_code:val('s-dress')||null,requirements:csv(val('s-req')),description:val('s-desc')||null,is_urgent:chk('s-urg')};
     var r=await api('/api/shifts',{method:'POST',body:JSON.stringify(b)});
     if(r.ok){ toast('✅ Turno pubblicato'); TAB.venue='shifts'; render(); }
-    else { err.textContent=(r.data&&r.data.detail)||'Errore'; err.style.display='block'; }
+    else if(r.status===402){ err.textContent='🔒 '+errMsg(r); err.style.display='block'; }
+    else { err.textContent=errMsg(r); err.style.display='block'; }
   };
 }
 async function venueShifts(){
@@ -365,7 +436,8 @@ function bindVenueShiftActions(){
   };});
   document.querySelectorAll('[data-act="contract"]').forEach(function(b){ b.onclick=async function(){
     var r=await api('/api/contracts/from-application/'+b.dataset.app,{method:'POST',body:JSON.stringify({})});
-    if(r.ok){ toast('📄 Contratto generato — vai in Contratti'); TAB.venue='contracts'; render(); } else toast((r.data&&r.data.detail)||'Errore');
+    if(r.ok){ toast('📄 Contratto generato — vai in Contratti'); TAB.venue='contracts'; render(); }
+    else toast((r.status===402?'🔒 ':'')+errMsg(r));
   };});
 }
 async function venueContracts(){

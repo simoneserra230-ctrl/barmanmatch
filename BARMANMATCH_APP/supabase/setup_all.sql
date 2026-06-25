@@ -333,3 +333,42 @@ ALTER TABLE contracts ADD COLUMN IF NOT EXISTS payment_funded_at   TIMESTAMPTZ;
 ALTER TABLE contracts ADD COLUMN IF NOT EXISTS payment_released_at TIMESTAMPTZ;
 ALTER TABLE contracts ADD COLUMN IF NOT EXISTS min_hourly_rate     NUMERIC(8,2);
 
+
+-- ===== 5) payments_stripe_schema.sql =====
+-- BarmanMatch — Stripe Connect (additivo). Riferimenti Stripe per il movimento
+-- reale dietro lo stato escrow del contratto.
+
+ALTER TABLE worker_profiles ADD COLUMN IF NOT EXISTS stripe_account_id        TEXT;
+ALTER TABLE contracts       ADD COLUMN IF NOT EXISTS stripe_payment_intent_id TEXT;
+ALTER TABLE contracts       ADD COLUMN IF NOT EXISTS stripe_transfer_id       TEXT;
+ALTER TABLE contracts       ADD COLUMN IF NOT EXISTS stripe_refund_id         TEXT;
+
+
+-- ===== 6) entitlements_schema.sql =====
+-- BarmanMatch — Entitlement / abbonamento STRUTTURE (additivo).
+-- Lavoratori gratis; le venue hanno bisogno di status attivo (trial o abbonamento)
+-- per pubblicare turni / assumere. Admin bypassa. Stripe scrivera' qui dopo.
+
+CREATE TABLE IF NOT EXISTS venue_entitlements (
+    venue_id               UUID PRIMARY KEY REFERENCES venue_profiles(id) ON DELETE CASCADE,
+    plan                   TEXT NOT NULL DEFAULT 'none',
+    status                 TEXT NOT NULL DEFAULT 'inactive'
+                           CHECK (status IN ('inactive','trialing','active','past_due','cancelled')),
+    trial_ends_at          TIMESTAMPTZ,
+    current_period_end     TIMESTAMPTZ,
+    stripe_customer_id     TEXT,
+    stripe_subscription_id TEXT,
+    created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_entitlements_status ON venue_entitlements(status);
+
+CREATE TRIGGER trg_entitlements_updated BEFORE UPDATE ON venue_entitlements
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+ALTER TABLE venue_entitlements ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "entitlements_self_read" ON venue_entitlements
+    FOR SELECT USING (auth.uid() = venue_id);
+

@@ -2,6 +2,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from auth_middleware import require_uid
+from entitlement import require_active_venue
 from models import ShiftCreate, ShiftUpdate, ApplyRequest, ConfirmApplicationRequest
 from wage_floor import enforce_floor
 
@@ -31,12 +32,9 @@ def update_application_status(app_id: str, body: dict, uid: str = Depends(requir
 # ── VENUE: crea / leggi / aggiorna turni ─────────────────────────
 
 @router.post("")
-def create_shift(body: ShiftCreate, uid: str = Depends(require_uid)):
+def create_shift(body: ShiftCreate, uid: str = Depends(require_active_venue)):
+    # require_active_venue: solo struttura con abbonamento attivo (admin bypassa)
     db = get_db()
-    # verifica che l'utente abbia un profilo venue
-    venue = db.table("venue_profiles").select("id").eq("id", uid).single().execute()
-    if not venue.data:
-        raise HTTPException(status_code=403, detail="Solo le strutture possono creare turni")
 
     # tariffa minima bloccante (no servizi sottopagati)
     enforce_floor(body.role, body.hourly_rate)
