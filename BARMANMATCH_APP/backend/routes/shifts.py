@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from auth_middleware import require_uid
 from models import ShiftCreate, ShiftUpdate, ApplyRequest, ConfirmApplicationRequest
+from wage_floor import enforce_floor
 
 router = APIRouter()
 
@@ -36,6 +37,9 @@ def create_shift(body: ShiftCreate, uid: str = Depends(require_uid)):
     venue = db.table("venue_profiles").select("id").eq("id", uid).single().execute()
     if not venue.data:
         raise HTTPException(status_code=403, detail="Solo le strutture possono creare turni")
+
+    # tariffa minima bloccante (no servizi sottopagati)
+    enforce_floor(body.role, body.hourly_rate)
 
     payload = body.model_dump()
     payload["venue_id"] = uid

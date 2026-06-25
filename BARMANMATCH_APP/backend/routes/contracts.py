@@ -21,6 +21,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from auth_middleware import require_uid
 from models import ContractCreate, ContractComplete, ContractCancel
+from wage_floor import enforce_floor
 
 router = APIRouter()
 
@@ -80,6 +81,9 @@ def create_from_application(application_id: str, body: ContractCreate = Contract
     if shift.data["venue_id"] != uid:
         raise HTTPException(403, "Solo la struttura del turno può generare il contratto")
 
+    # tariffa minima bloccante (difesa in profondità anche sul turno già esistente)
+    min_rate = enforce_floor(shift.data["role"], float(shift.data["hourly_rate"]))
+
     fee_pct = body.fee_pct if body.fee_pct is not None else DEFAULT_FEE_PCT
     hours = _hours(shift.data["start_time"], shift.data["end_time"])
     econ = _economics(float(shift.data["hourly_rate"]), hours, fee_pct)
@@ -105,6 +109,8 @@ def create_from_application(application_id: str, body: ContractCreate = Contract
         "venue_signed": True,
         "venue_signed_at": _now(),
         "worker_signed": False,
+        "min_hourly_rate": min_rate,
+        "payment_status": "pending",   # escrow: pending → held → released/refunded
     }
     res = db.table("contracts").insert(payload).execute()
     if not res.data:
@@ -162,6 +168,27 @@ def sign_contract(contract_id: str, uid: str = Depends(require_uid)):
     return res.data[0] if res.data else {"ok": True, **updates}
 
 
+# ── ESCROW: la venue finanzia il pagamento (anti-nero) ───────────
+@router.post("/{contract_id}/fund")
+def fund_contract(contract_id: str, uid: str = Depends(require_uid)):
+    """La venue versa il compenso in escrow sulla piattaforma. Stub stato:
+    qui muove solo lo stato 'pending'→'held'; il movimento reale di denaro
+    sarà gestito da Stripe Connect (TODO). Niente pagamenti fuori piattaforma."""
+    db = get_db()
+    c = db.table("contracts").select("*").eq("id", contract_id).single().execute()
+    if not c.data:
+        raise HTTPException(404, "Contratto non trovato")
+    if c.data["venue_id"] != uid:
+        raise HTTPException(403, "Solo la struttura può finanziare il contratto")
+    if c.data["status"] != "active":
+        raise HTTPException(400, "Finanziabile solo quando il contratto è attivo (firmato da entrambi)")
+    if c.data.get("payment_status") != "pending":
+        raise HTTPException(400, f"Pagamento già gestito (stato: {c.data.get('payment_status')})")
+    updates = {"payment_status": "held", "payment_funded_at": _now()}
+    res = db.table("contracts").update(updates).eq("id", contract_id).execute()
+    return res.data[0] if res.data else {"ok": True, **updates}
+
+
 # ── COMPLETA (venue) ─────────────────────────────────────────────
 @router.post("/{contract_id}/complete")
 def complete_contract(contract_id: str, body: ContractComplete = ContractComplete(), uid: str = Depends(require_uid)):
@@ -173,8 +200,11 @@ def complete_contract(contract_id: str, body: ContractComplete = ContractComplet
         raise HTTPException(403, "Solo la struttura può completare il contratto")
     if c.data["status"] != "active":
         raise HTTPException(400, f"Contratto non attivo (stato: {c.data['status']})")
+    if c.data.get("payment_status") != "held":
+        raise HTTPException(400, "Finanzia il pagamento in escrow (POST /fund) prima di completare il turno — niente pagamenti fuori piattaforma")
 
-    updates = {"status": "completed", "completed_at": _now()}
+    updates = {"status": "completed", "completed_at": _now(),
+               "payment_status": "released", "payment_released_at": _now()}
     if body.actual_hours is not None:
         econ = _economics(float(c.data["hourly_rate"]), round(float(body.actual_hours), 2), float(c.data["fee_pct"]))
         updates["actual_hours"] = econ["est_hours"]
@@ -202,5 +232,7 @@ def cancel_contract(contract_id: str, body: ContractCancel = ContractCancel(), u
         "cancelled_at": _now(),
         "cancel_reason": body.reason or ("Annullato dalla struttura" if uid == c.data["venue_id"] else "Annullato dal professionista"),
     }
+    if c.data.get("payment_status") == "held":   # escrow finanziato → rimborso alla venue
+        updates["payment_status"] = "refunded"
     res = db.table("contracts").update(updates).eq("id", contract_id).execute()
     return res.data[0] if res.data else {"ok": True, **updates}
