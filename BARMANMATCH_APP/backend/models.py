@@ -114,3 +114,27 @@ class ContractComplete(BaseModel):
 
 class ContractCancel(BaseModel):
     reason: Optional[str] = None
+
+
+# ── COMPANIES (aziende che staffano gli eventi) ──────────────────
+class CompanyCreate(BaseModel):
+    name: str
+    city: Optional[str] = None
+
+
+# ── EVENTS (Booking.com degli eventi) ────────────────────────────
+class EventCreate(BaseModel):
+    title: str
+    event_type: str = "privato"          # matrimonio|aziendale|privato|catering|altro
+    date: date
+    start_time: time
+    end_time: time
+    city: str
+    guests: Optional[int] = None
+    description: Optional[str] = None
+    budget: Optional[float] = None
+    priority_hours: Optional[int] = None  # durata finestra prelazione (default env)
+
+
+class EventCancel(BaseModel):
+    reason: Optional[str] = None
