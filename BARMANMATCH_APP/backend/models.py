@@ -98,3 +98,19 @@ class RatingCreate(BaseModel):
     # Per worker→venue
     work_environment: Optional[int] = None
     payment_punctuality: Optional[int] = None
+
+
+# ── CONTRACTS (tipo Deliveroo) ───────────────────────────────────
+class ContractCreate(BaseModel):
+    """Opzioni alla generazione del contratto da una candidatura confermata."""
+    fee_pct: Optional[float] = None              # override commissione piattaforma
+    cancellation_policy: Optional[str] = None
+    payment_terms: Optional[str] = None
+
+
+class ContractComplete(BaseModel):
+    actual_hours: Optional[float] = None         # ore effettive (ricalcola i totali)
+
+
+class ContractCancel(BaseModel):
+    reason: Optional[str] = None

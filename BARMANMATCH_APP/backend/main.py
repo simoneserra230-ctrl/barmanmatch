@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from routes import auth, workers, venues, shifts, matching, ratings
+from routes import auth, workers, venues, shifts, matching, ratings, contracts
 
 load_dotenv()
 
@@ -23,6 +23,7 @@ app.include_router(venues.router,   prefix="/api/venues",   tags=["venues"])
 app.include_router(shifts.router,   prefix="/api/shifts",   tags=["shifts"])
 app.include_router(matching.router, prefix="/api/matching", tags=["matching"])
 app.include_router(ratings.router,  prefix="/api/ratings",  tags=["ratings"])
+app.include_router(contracts.router, prefix="/api/contracts", tags=["contracts"])
 
 
 @app.get("/")
