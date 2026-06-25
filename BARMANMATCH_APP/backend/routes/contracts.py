@@ -22,6 +22,7 @@ from database import get_db
 from auth_middleware import require_uid
 from models import ContractCreate, ContractComplete, ContractCancel
 from wage_floor import enforce_floor
+import payments
 
 router = APIRouter()
 
@@ -184,6 +185,14 @@ def fund_contract(contract_id: str, uid: str = Depends(require_uid)):
         raise HTTPException(400, "Finanziabile solo quando il contratto è attivo (firmato da entrambi)")
     if c.data.get("payment_status") != "pending":
         raise HTTPException(400, f"Pagamento già gestito (stato: {c.data.get('payment_status')})")
+    # Con Stripe: la venue paga via Checkout, il webhook porterà a 'held'.
+    if payments.enabled():
+        try:
+            url = payments.create_fund_checkout(c.data)
+        except Exception as e:
+            raise HTTPException(502, f"Errore Stripe: {e}")
+        return {"ok": True, "checkout_url": url}
+    # Fallback simulato (nessun denaro reale)
     updates = {"payment_status": "held", "payment_funded_at": _now()}
     res = db.table("contracts").update(updates).eq("id", contract_id).execute()
     return res.data[0] if res.data else {"ok": True, **updates}
@@ -205,6 +214,7 @@ def complete_contract(contract_id: str, body: ContractComplete = ContractComplet
 
     updates = {"status": "completed", "completed_at": _now(),
                "payment_status": "released", "payment_released_at": _now()}
+    final = dict(c.data)
     if body.actual_hours is not None:
         econ = _economics(float(c.data["hourly_rate"]), round(float(body.actual_hours), 2), float(c.data["fee_pct"]))
         updates["actual_hours"] = econ["est_hours"]
@@ -212,6 +222,18 @@ def complete_contract(contract_id: str, body: ContractComplete = ContractComplet
         updates["fee_amount"] = econ["fee_amount"]
         updates["venue_total"] = econ["venue_total"]
         updates["worker_payout"] = econ["worker_payout"]
+        final.update(updates)
+
+    # Con Stripe: accredita il compenso al conto Connect del worker.
+    if payments.enabled():
+        w = db.table("worker_profiles").select("stripe_account_id").eq("id", c.data["worker_id"]).single().execute().data or {}
+        acct = w.get("stripe_account_id")
+        if not acct or not payments.account_ready(acct):
+            raise HTTPException(400, "Il professionista deve completare l'onboarding pagamenti prima dell'accredito")
+        try:
+            updates["stripe_transfer_id"] = payments.release(final, acct)
+        except Exception as e:
+            raise HTTPException(502, f"Errore accredito Stripe: {e}")
 
     res = db.table("contracts").update(updates).eq("id", contract_id).execute()
     return res.data[0] if res.data else {"ok": True, **updates}
@@ -233,6 +255,13 @@ def cancel_contract(contract_id: str, body: ContractCancel = ContractCancel(), u
         "cancel_reason": body.reason or ("Annullato dalla struttura" if uid == c.data["venue_id"] else "Annullato dal professionista"),
     }
     if c.data.get("payment_status") == "held":   # escrow finanziato → rimborso alla venue
+        if payments.enabled():
+            try:
+                rid = payments.refund(c.data)
+                if rid:
+                    updates["stripe_refund_id"] = rid
+            except Exception as e:
+                raise HTTPException(502, f"Errore rimborso Stripe: {e}")
         updates["payment_status"] = "refunded"
     res = db.table("contracts").update(updates).eq("id", contract_id).execute()
     return res.data[0] if res.data else {"ok": True, **updates}

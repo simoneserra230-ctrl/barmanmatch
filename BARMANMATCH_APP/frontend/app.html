@@ -263,7 +263,19 @@ function workerProfile(p){
     +'<div class="muted">'+esc(p.city)+' · '+(p.roles||[]).map(esc).join(', ')+'</div>'
     +'<div class="row" style="margin-top:10px">'+ratingPills(p)+'</div>'
     +(p.bio?'<p style="margin-top:10px">'+esc(p.bio)+'</p>':'')
-    +'<div class="muted" style="margin-top:10px">Competenze: '+((p.skills||[]).map(esc).join(', ')||'—')+'</div></div>';
+    +'<div class="muted" style="margin-top:10px">Competenze: '+((p.skills||[]).map(esc).join(', ')||'—')+'</div></div>'
+    +'<div class="card"><div class="hd"><b>💳 Pagamenti</b></div><div id="pay-status" class="muted">Verifico…</div><button id="pay-onboard" class="btn g sm" style="margin-top:8px;display:none">Configura i pagamenti</button></div>';
+  api('/api/payments/connect/status').then(function(r){
+    var st=document.getElementById('pay-status'), bt=document.getElementById('pay-onboard'); if(!st) return;
+    var d=r.data||{};
+    if(!d.enabled){ st.innerHTML='Pagamenti gestiti in <b>escrow</b> dalla piattaforma: niente contante, compenso garantito a turno completato.'; return; }
+    if(d.ready){ st.innerHTML='✅ Conto pagamenti collegato — pronto a ricevere i compensi.'; }
+    else { st.innerHTML='⚠️ Collega il tuo conto per ricevere i compensi in modo tracciato e sicuro.'; if(bt) bt.style.display=''; }
+  }).catch(function(){ var st=document.getElementById('pay-status'); if(st) st.textContent=''; });
+  var btn=document.getElementById('pay-onboard'); if(btn) btn.onclick=async function(){
+    var r=await api('/api/payments/connect/onboard',{method:'POST',body:JSON.stringify({})});
+    if(r.ok && r.data && r.data.url){ location.href=r.data.url; } else toast((r.data&&r.data.detail)||'Pagamenti non attivi');
+  };
 }
 
 //──────────────── VENUE ────────────────
@@ -475,7 +487,7 @@ function bindContractActions(reload){
   function act(name, path, ok){ document.querySelectorAll('[data-act="'+name+'"]').forEach(function(b){ b.onclick=async function(){
     if(name==='cancel'&&!confirm('Annullare il contratto?')) return;
     var r=await api(path(b.dataset.id),{method:'POST',body:JSON.stringify({})});
-    if(r.ok){ toast(ok); reload(); } else toast((r.data&&r.data.detail)||'Errore');
+    if(r.ok){ if(r.data&&r.data.checkout_url){ location.href=r.data.checkout_url; return; } toast(ok); reload(); } else toast((r.data&&r.data.detail)||'Errore');
   };});}
   act('sign', function(id){return '/api/contracts/'+id+'/sign';}, '✍️ Firmato');
   act('fund', function(id){return '/api/contracts/'+id+'/fund';}, '🔒 Pagamento in escrow');
