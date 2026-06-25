@@ -237,12 +237,13 @@ async function renderVenue(){
   var prof=await api('/api/venues/profile/me');
   if(prof.status===404){ return renderVenueOnboard(); }
   var tab=TAB.venue;
-  var nav=['shifts|📋 Turni & candidature','new|➕ Nuovo turno','contracts|📑 Contratti','profile|🏨 Profilo']
+  var nav=['shifts|📋 Turni & candidature','new|➕ Nuovo turno','events|📅 Eventi','contracts|📑 Contratti','profile|🏨 Profilo']
     .map(function(x){var p=x.split('|');return '<button data-tab="'+p[0]+'" class="'+(tab===p[0]?'on':'')+'">'+p[1]+'</button>';}).join('');
   document.getElementById('app').innerHTML=shell('venue',nav,'<div id="tabbody"><div class="empty">Carico…</div></div>');
   document.querySelectorAll('.nav [data-tab]').forEach(function(b){ b.onclick=function(){ TAB.venue=b.dataset.tab; render(); }; });
   if(tab==='shifts') venueShifts();
   else if(tab==='new') venueNewShift();
+  else if(tab==='events') venueEvents();
   else if(tab==='contracts') venueContracts();
   else venueProfile(prof.data);
 }
@@ -330,6 +331,71 @@ async function venueContracts(){
 }
 function venueProfile(p){
   document.getElementById('tabbody').innerHTML='<div class="card"><h2>'+esc(p.name)+'</h2><div class="muted">'+esc(p.venue_type)+' · '+esc(p.city)+'</div>'+(p.description?'<p style="margin-top:8px">'+esc(p.description)+'</p>':'')+(p.address?'<div class="muted" style="margin-top:6px">📍 '+esc(p.address)+'</div>':'')+'</div>';
+}
+
+//──────────────── EVENTI + prelazione BAD ────────────────
+async function venueEvents(){
+  var box=document.getElementById('tabbody'); box.innerHTML='<div class="empty">Carico…</div>';
+  var comp=await api('/api/companies/mine');
+  var hasComp=comp.ok && comp.status!==404; var company=hasComp?comp.data:null;
+  var bar = hasComp
+    ? '<div class="card"><div class="hd"><div>🏢 <b>'+esc(company.name)+'</b> <span class="muted">'+esc(company.city||'')+'</span> '+(company.is_priority?'<span class="pill p-gold">⭐ Prelazione (BAD)</span>':'<span class="pill p-dim">azienda standard</span>')+'</div></div><div class="muted">Come azienda puoi <b>prendere</b> gli eventi disponibili. Le aziende prioritarie li vedono in anteprima.</div></div>'
+    : '<div class="card"><div class="hd"><b>🏢 Diventa azienda</b></div><p class="muted" style="margin-bottom:8px">Registra la tua azienda per prendere e staffare gli eventi pubblicati.</p><div class="grid2"><div class="field"><label>Nome azienda</label><input id="co-name"></div><div class="field"><label>Città</label><input id="co-city"></div></div><button id="co-save" class="btn g sm">Registra azienda</button></div>';
+  var form='<div class="card"><div class="hd"><b>📅 Pubblica un evento</b></div>'
+    +'<div class="grid2"><div class="field"><label>Titolo *</label><input id="e-title" placeholder="Matrimonio Rossi"></div><div class="field"><label>Tipo</label><select id="e-type"><option value="matrimonio">Matrimonio</option><option value="aziendale">Aziendale</option><option value="privato">Privato</option><option value="catering">Catering</option><option value="altro">Altro</option></select></div></div>'
+    +'<div class="grid2"><div class="field"><label>Data *</label><input id="e-date" type="date"></div><div class="field"><label>Città *</label><input id="e-city"></div></div>'
+    +'<div class="grid2"><div class="field"><label>Inizio *</label><input id="e-start" type="time"></div><div class="field"><label>Fine *</label><input id="e-end" type="time"></div></div>'
+    +'<div class="grid2"><div class="field"><label>Ospiti</label><input id="e-guests" type="number"></div><div class="field"><label>Budget €</label><input id="e-budget" type="number"></div></div>'
+    +'<div class="field"><label>Finestra prelazione BAD (ore)</label><input id="e-prio" type="number" value="24"><div class="muted" style="margin-top:4px">Per N ore solo le aziende prioritarie (BAD) possono prenderlo. 0 = subito aperto a tutte.</div></div>'
+    +'<div class="field"><label>Descrizione</label><textarea id="e-desc" rows="2"></textarea></div>'
+    +'<div id="e-err" class="err" style="display:none"></div><button id="e-save" class="btn gold">Pubblica evento</button></div>';
+  var mine=await api('/api/events/mine'); var mineRows=mine.ok?(mine.data||[]):[];
+  var avail=await api('/api/events'); var availRows=avail.ok?(avail.data||[]):[];
+  var claimedRows=[]; if(hasComp){ var cl=await api('/api/events/claimed'); claimedRows=cl.ok?(cl.data||[]):[]; }
+  box.innerHTML=bar+form
+    +'<h3 style="margin:16px 0 8px">I miei eventi</h3>'+(mineRows.length?mineRows.map(eventOwnerCard).join(''):'<div class="empty">Nessun evento pubblicato.</div>')
+    +'<h3 style="margin:16px 0 8px">Eventi disponibili</h3>'+(availRows.length?availRows.map(function(e){return eventMarketCard(e,hasComp);}).join(''):'<div class="empty">Nessun evento disponibile.</div>')
+    +(hasComp?('<h3 style="margin:16px 0 8px">Eventi presi dalla tua azienda</h3>'+(claimedRows.length?claimedRows.map(eventClaimedCard).join(''):'<div class="empty">Nessun evento preso.</div>')):'');
+  if(!hasComp){ var cs=document.getElementById('co-save'); if(cs) cs.onclick=async function(){ if(!val('co-name')){toast('Inserisci il nome azienda');return;} var r=await api('/api/companies',{method:'POST',body:JSON.stringify({name:val('co-name'),city:val('co-city')||null})}); if(r.ok){toast('✅ Azienda registrata');venueEvents();}else toast((r.data&&r.data.detail)||'Errore'); }; }
+  document.getElementById('e-save').onclick=async function(){
+    var err=document.getElementById('e-err'); err.style.display='none';
+    var req=['e-title','e-date','e-city','e-start','e-end'];
+    for(var i=0;i<req.length;i++){ if(!val(req[i])){ err.textContent='Compila i campi obbligatori (*)'; err.style.display='block'; return; } }
+    var b={title:val('e-title'),event_type:val('e-type'),date:val('e-date'),city:val('e-city'),start_time:val('e-start'),end_time:val('e-end'),guests:parseInt(val('e-guests'))||null,budget:parseFloat(val('e-budget'))||null,priority_hours:parseInt(val('e-prio')),description:val('e-desc')||null};
+    var r=await api('/api/events',{method:'POST',body:JSON.stringify(b)});
+    if(r.ok){ toast('✅ Evento pubblicato'); venueEvents(); } else { err.textContent=(r.data&&r.data.detail)||'Errore'; err.style.display='block'; }
+  };
+  bindEventActions();
+}
+function eventOwnerCard(e){
+  var a=[];
+  if(e.status==='open' && e.in_priority_window) a.push('<button class="btn sm ghost" data-eact="opennow" data-id="'+e.id+'">Apri a tutte ora</button>');
+  if(e.status!=='completed' && e.status!=='cancelled'){ a.push('<button class="btn sm g" data-eact="complete" data-id="'+e.id+'">Completa</button>'); a.push('<button class="btn sm danger" data-eact="cancel" data-id="'+e.id+'">Annulla</button>'); }
+  return '<div class="card"><div class="hd"><div><b>'+esc(e.title)+'</b> <span class="muted">'+esc(e.event_type)+' · '+dt(e.date)+' · '+hhmm(e.start_time)+'–'+hhmm(e.end_time)+' · '+esc(e.city)+'</span></div>'+statusPill(e.status)+'</div>'
+    +'<div class="muted">'+(e.in_priority_window?('🔒 in prelazione BAD fino al '+dt(e.priority_until)):'aperto a tutte le aziende')+(e.claimed_by_company?' · preso ✓':'')+'</div>'
+    +(a.length?'<div class="row" style="margin-top:10px">'+a.join('')+'</div>':'')+'</div>';
+}
+function eventMarketCard(e,hasComp){
+  var btn;
+  if(!hasComp) btn='<span class="pill p-dim">Registra un\'azienda per prendere</span>';
+  else if(e.claimable_by_me) btn='<button class="btn sm gold" data-eact="claim" data-id="'+e.id+'">Prendi evento</button>';
+  else btn='<span class="pill p-orange">🔒 In prelazione (riservato aziende prioritarie)</span>';
+  return '<div class="card"><div class="hd"><div><b>'+esc(e.title)+'</b> <span class="muted">'+esc(e.event_type)+' · '+dt(e.date)+' · '+esc(e.city)+(e.guests?(' · '+e.guests+' ospiti'):'')+'</span></div>'+(e.in_priority_window?'<span class="pill p-gold">⭐ prelazione</span>':'<span class="pill p-green">aperto</span>')+'</div>'
+    +(e.description?'<div style="margin-top:4px">'+esc(e.description)+'</div>':'')+'<div class="row" style="margin-top:10px">'+btn+'</div></div>';
+}
+function eventClaimedCard(e){
+  return '<div class="card"><div class="hd"><div><b>'+esc(e.title)+'</b> <span class="muted">'+dt(e.date)+' · '+esc(e.city)+'</span></div>'+statusPill(e.status)+'</div><div class="muted">Preso dalla tua azienda — staffalo coi turni (in arrivo).</div></div>';
+}
+function bindEventActions(){
+  function ev(name,path,ok){ document.querySelectorAll('[data-eact="'+name+'"]').forEach(function(b){ b.onclick=async function(){
+    if(name==='cancel'&&!confirm('Annullare l\'evento?')) return;
+    var r=await api(path(b.dataset.id),{method:'POST',body:JSON.stringify({})});
+    if(r.ok){ toast(ok); venueEvents(); } else toast((r.data&&r.data.detail)||'Errore');
+  };});}
+  ev('claim', function(id){return '/api/events/'+id+'/claim';}, '✅ Evento preso!');
+  ev('opennow', function(id){return '/api/events/'+id+'/open-now';}, 'Prelazione chiusa: aperto a tutte');
+  ev('complete', function(id){return '/api/events/'+id+'/complete';}, 'Evento completato');
+  ev('cancel', function(id){return '/api/events/'+id+'/cancel';}, 'Evento annullato');
 }
 
 //──────────────── contracts shared ────────────────

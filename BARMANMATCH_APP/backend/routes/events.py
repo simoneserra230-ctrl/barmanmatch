@@ -88,6 +88,27 @@ def list_events(uid: str = Depends(require_uid)):
     return sorted(rows, key=lambda e: (e.get("date") or "", e.get("start_time") or ""))
 
 
+# ── EVENTI dell'owner (tutti gli stati) — PRIMA di /{event_id} ───
+@router.get("/mine")
+def my_events(uid: str = Depends(require_uid)):
+    db = get_db()
+    rows = db.table("events").select("*").eq("owner_id", uid).execute().data or []
+    for ev in rows:
+        ev["in_priority_window"] = _in_priority_window(ev)
+    return sorted(rows, key=lambda e: (e.get("created_at") or ""), reverse=True)
+
+
+# ── EVENTI presi dalla mia azienda — PRIMA di /{event_id} ────────
+@router.get("/claimed")
+def claimed_events(uid: str = Depends(require_uid)):
+    db = get_db()
+    company = _caller_company(db, uid)
+    if not company:
+        return []
+    rows = db.table("events").select("*").eq("claimed_by_company", company["id"]).execute().data or []
+    return sorted(rows, key=lambda e: (e.get("claimed_at") or ""), reverse=True)
+
+
 @router.get("/{event_id}")
 def get_event(event_id: str, uid: str = Depends(require_uid)):
     db = get_db()
