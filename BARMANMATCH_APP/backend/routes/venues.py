@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from auth_middleware import require_uid
 from models import VenueProfileCreate, VenueProfileUpdate
+from kyc import valid_piva, normalize_piva
 
 router = APIRouter()
 
@@ -16,6 +17,13 @@ def create_profile(body: VenueProfileCreate, uid: str = Depends(require_uid)):
     payload = body.model_dump()
     payload["id"] = uid
     payload["email"] = db.auth.admin.get_user_by_id(uid).user.email
+
+    # KYC light: P.IVA -> verifica formato e marca is_verified
+    if payload.get("vat_number"):
+        if not valid_piva(payload["vat_number"]):
+            raise HTTPException(status_code=422, detail="Partita IVA non valida")
+        payload["vat_number"] = normalize_piva(payload["vat_number"])
+        payload["is_verified"] = True
 
     res = db.table("venue_profiles").insert(payload).execute()
     if not res.data:
@@ -46,6 +54,11 @@ def update_profile(body: VenueProfileUpdate, uid: str = Depends(require_uid)):
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
     if not updates:
         raise HTTPException(status_code=400, detail="Nessun campo da aggiornare")
+    if updates.get("vat_number"):
+        if not valid_piva(updates["vat_number"]):
+            raise HTTPException(status_code=422, detail="Partita IVA non valida")
+        updates["vat_number"] = normalize_piva(updates["vat_number"])
+        updates["is_verified"] = True
     res = db.table("venue_profiles").update(updates).eq("id", uid).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="Aggiornamento fallito")

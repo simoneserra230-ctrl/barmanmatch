@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from auth_middleware import require_uid
 from entitlement import require_active_venue
+from antidisintermediation import mask_venue_public
 from models import ShiftCreate, ShiftUpdate, ApplyRequest, ConfirmApplicationRequest
 from wage_floor import enforce_floor
 
@@ -76,7 +77,23 @@ def get_shift(shift_id: str, uid: str = Depends(require_uid)):
     )
     if not res.data:
         raise HTTPException(status_code=404, detail="Turno non trovato")
-    return res.data
+
+    # anti-disintermediazione: indirizzo esatto solo al venue stesso o a un worker
+    # con contratto attivo/completato su questo turno; altrimenti resta la citta'.
+    data = res.data
+    if data.get("venue_id") != uid:
+        reveal = bool(
+            db.table("contracts")
+            .select("id")
+            .eq("shift_id", shift_id)
+            .eq("worker_id", uid)
+            .in_("status", ["active", "completed"])
+            .execute()
+            .data
+        )
+        if not reveal and data.get("venue_profiles"):
+            data["venue_profiles"] = mask_venue_public(data["venue_profiles"])
+    return data
 
 
 @router.patch("/{shift_id}")

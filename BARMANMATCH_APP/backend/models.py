@@ -43,6 +43,7 @@ class VenueProfileCreate(BaseModel):
     venue_type: str
     address: Optional[str] = None
     description: Optional[str] = None
+    vat_number: Optional[str] = None      # P.IVA (KYC light)
 
 
 class VenueProfileUpdate(BaseModel):
@@ -52,6 +53,7 @@ class VenueProfileUpdate(BaseModel):
     venue_type: Optional[str] = None
     address: Optional[str] = None
     description: Optional[str] = None
+    vat_number: Optional[str] = None
 
 
 # ── SHIFTS ────────────────────────────────────────────────────────

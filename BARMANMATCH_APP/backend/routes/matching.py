@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from auth_middleware import require_uid
+from antidisintermediation import mask_worker_public
 
 router = APIRouter()
 
@@ -124,7 +125,8 @@ def rank_workers_for_shift(shift_id: str, uid: str = Depends(require_uid)):
             "is_favorite": wid in fav_ids,
         }
         score = compute_match_score(w, shift, hist)
-        ranked.append({**w, "match_score": score})
+        # anti-disintermediazione: niente telefono/email prima del contratto
+        ranked.append({**mask_worker_public(w), "match_score": score})
 
     ranked.sort(key=lambda x: x["match_score"], reverse=True)
     return ranked[:20]

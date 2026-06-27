@@ -1,8 +1,18 @@
 """BarmanMatch — Policy pubbliche della piattaforma (tariffa minima, ecc.)."""
 from fastapi import APIRouter
 from wage_floor import MIN_HOURLY, DEFAULT_FLOOR
+from antidisintermediation import ANTI_DISINTERMEDIATION_NOTICE
 
 router = APIRouter()
+
+
+@router.get("/terms")
+def terms():
+    return {
+        "anti_disintermediation": ANTI_DISINTERMEDIATION_NOTICE,
+        "no_black_work": "Niente pagamenti in nero: il compenso passa dall'escrow di piattaforma.",
+        "min_wage": "Tariffe sotto il minimo CCNL indicativo vengono rifiutate.",
+    }
 
 
 @router.get("/wage-floor")

@@ -21,6 +21,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from auth_middleware import require_uid
 from entitlement import require_active_venue
+from antidisintermediation import ANTI_DISINTERMEDIATION_NOTICE
 from models import ContractCreate, ContractComplete, ContractCancel
 from wage_floor import enforce_floor
 import payments
@@ -107,6 +108,7 @@ def create_from_application(application_id: str, body: ContractCreate = Contract
             "dress_code": shift.data.get("dress_code"),
             "cancellation_policy": body.cancellation_policy or DEFAULT_CANCELLATION,
             "payment_terms": body.payment_terms or DEFAULT_PAYMENT,
+            "platform_policy": ANTI_DISINTERMEDIATION_NOTICE,
         },
         "status": "draft",
         "venue_signed": True,
@@ -139,6 +141,25 @@ def get_contract(contract_id: str, uid: str = Depends(require_uid)):
     if not res.data or not _is_party(res.data, uid):
         raise HTTPException(404, "Contratto non trovato")
     return res.data
+
+
+# ── CONTATTI controparte (sbloccati a contratto firmato) ─────────
+@router.get("/{contract_id}/contact")
+def get_contact(contract_id: str, uid: str = Depends(require_uid)):
+    """Contatti diretti della controparte: disponibili SOLO quando il contratto
+    e' attivo o completato (anti-disintermediazione)."""
+    db = get_db()
+    c = db.table("contracts").select("*").eq("id", contract_id).single().execute()
+    if not c.data or not _is_party(c.data, uid):
+        raise HTTPException(404, "Contratto non trovato")
+    if c.data.get("status") not in ("active", "completed"):
+        raise HTTPException(403, "I contatti si sbloccano quando il contratto e' firmato da entrambi")
+
+    if uid == c.data["venue_id"]:
+        w = db.table("worker_profiles").select("full_name, phone, email, city").eq("id", c.data["worker_id"]).single().execute().data or {}
+        return {"role": "worker", "name": w.get("full_name"), "phone": w.get("phone"), "email": w.get("email"), "city": w.get("city")}
+    v = db.table("venue_profiles").select("name, phone, email, city, address").eq("id", c.data["venue_id"]).single().execute().data or {}
+    return {"role": "venue", "name": v.get("name"), "phone": v.get("phone"), "email": v.get("email"), "city": v.get("city"), "address": v.get("address")}
 
 
 # ── FIRMA ────────────────────────────────────────────────────────

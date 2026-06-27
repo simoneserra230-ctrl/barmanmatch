@@ -372,3 +372,31 @@ ALTER TABLE venue_entitlements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "entitlements_self_read" ON venue_entitlements
     FOR SELECT USING (auth.uid() = venue_id);
 
+
+-- ===== 7) chat_kyc_schema.sql =====
+-- Chat in-app (anti-disintermediazione) legata al contratto + KYC light (P.IVA venue).
+
+CREATE TABLE IF NOT EXISTS messages (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    contract_id UUID NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+    sender_id   UUID NOT NULL,
+    body        TEXT NOT NULL,
+    flagged     BOOLEAN DEFAULT FALSE,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_contract ON messages(contract_id, created_at);
+
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "messages_party_read" ON messages
+    FOR SELECT USING (
+        auth.uid() IN (
+            SELECT venue_id FROM contracts WHERE id = contract_id
+            UNION
+            SELECT worker_id FROM contracts WHERE id = contract_id
+        )
+    );
+
+ALTER TABLE venue_profiles ADD COLUMN IF NOT EXISTS vat_number TEXT;
+

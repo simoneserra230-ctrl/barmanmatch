@@ -15,7 +15,11 @@ def connect_status(uid: str = Depends(require_uid)):
     db = get_db()
     w = db.table("worker_profiles").select("stripe_account_id").eq("id", uid).single().execute().data or {}
     acct = w.get("stripe_account_id")
-    return {"enabled": True, "account": acct, "ready": bool(acct) and payments.account_ready(acct)}
+    ready = bool(acct) and payments.account_ready(acct)
+    # KYC light worker: onboarding Stripe completato -> profilo verificato
+    if ready:
+        db.table("worker_profiles").update({"is_verified": True}).eq("id", uid).execute()
+    return {"enabled": True, "account": acct, "ready": ready}
 
 
 @router.post("/connect/onboard")
