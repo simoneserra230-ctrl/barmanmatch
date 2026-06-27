@@ -370,15 +370,16 @@ function renderVenueOnboard(){
     +'<div class="field"><label>Nome struttura *</label><input id="v-name"></div>'
     +'<div class="grid2"><div class="field"><label>Città *</label><input id="v-city"></div><div class="field"><label>Tipo *</label><select id="v-type"><option value="bar">Bar</option><option value="ristorante">Ristorante</option><option value="hotel">Hotel</option><option value="resort">Resort</option><option value="catering">Catering</option><option value="event_venue">Event venue</option><option value="altro">Altro</option></select></div></div>'
     +'<div class="grid2"><div class="field"><label>Telefono</label><input id="v-phone"></div><div class="field"><label>Indirizzo</label><input id="v-addr"></div></div>'
+    +'<div class="field"><label>Partita IVA <span class="muted">(verifica struttura)</span></label><input id="v-vat" placeholder="11 cifre"><div class="muted" style="margin-top:4px;font-size:11px">Con P.IVA valida la struttura risulta ✅ verificata. Niente lavoro in nero.</div></div>'
     +'<div class="field"><label>Descrizione</label><textarea id="v-desc" rows="2"></textarea></div>'
     +'<div id="v-err" class="err" style="display:none"></div><button id="v-save" class="btn gold">Salva profilo</button></div>');
   wireShell();
   document.getElementById('v-save').onclick=async function(){
     var err=document.getElementById('v-err'); err.style.display='none';
     if(!val('v-name')||!val('v-city')){ err.textContent='Nome e città obbligatori'; err.style.display='block'; return; }
-    var b={name:val('v-name'),city:val('v-city'),venue_type:val('v-type'),phone:val('v-phone')||null,address:val('v-addr')||null,description:val('v-desc')||null};
+    var b={name:val('v-name'),city:val('v-city'),venue_type:val('v-type'),phone:val('v-phone')||null,address:val('v-addr')||null,description:val('v-desc')||null,vat_number:val('v-vat')||null};
     var r=await api('/api/venues/profile',{method:'POST',body:JSON.stringify(b)});
-    if(r.ok){ toast('✅ Profilo creato'); render(); } else { err.textContent=(r.data&&r.data.detail)||'Errore'; err.style.display='block'; }
+    if(r.ok){ toast('✅ Profilo creato'); render(); } else { err.textContent=errMsg(r); err.style.display='block'; }
   };
 }
 async function venueNewShift(){
@@ -449,7 +450,19 @@ async function venueContracts(){
   bindContractActions(venueContracts);
 }
 function venueProfile(p){
-  document.getElementById('tabbody').innerHTML='<div class="card"><h2>'+esc(p.name)+'</h2><div class="muted">'+esc(p.venue_type)+' · '+esc(p.city)+'</div>'+(p.description?'<p style="margin-top:8px">'+esc(p.description)+'</p>':'')+(p.address?'<div class="muted" style="margin-top:6px">📍 '+esc(p.address)+'</div>':'')+'</div>';
+  var verified=p.is_verified?'<span class="pill p-green">✅ Verificata</span>':'<span class="pill p-dim">non verificata</span>';
+  var vatRow=p.vat_number
+    ? '<div class="muted" style="margin-top:6px">P.IVA '+esc(p.vat_number)+'</div>'
+    : '<div class="card" style="margin-top:10px;border-color:rgba(251,146,60,.4);background:rgba(251,146,60,.08)">Aggiungi la <b>Partita IVA</b> per verificare la struttura:'
+      +'<div class="row" style="gap:8px;margin-top:8px"><input id="vp-vat" placeholder="11 cifre" style="flex:1"><button class="btn sm" id="vp-vat-save">Verifica</button></div></div>';
+  document.getElementById('tabbody').innerHTML='<div class="card"><div class="hd"><div><h2 style="margin:0">'+esc(p.name)+'</h2><div class="muted">'+esc(p.venue_type)+' · '+esc(p.city)+'</div></div>'+verified+'</div>'
+    +(p.description?'<p style="margin-top:8px">'+esc(p.description)+'</p>':'')+(p.address?'<div class="muted" style="margin-top:6px">📍 '+esc(p.address)+'</div>':'')+vatRow+'</div>';
+  var sv=document.getElementById('vp-vat-save');
+  if(sv) sv.onclick=async function(){
+    var v=val('vp-vat'); if(!v){ toast('Inserisci la P.IVA'); return; }
+    var r=await api('/api/venues/profile/me',{method:'PATCH',body:JSON.stringify({vat_number:v})});
+    if(r.ok){ toast('✅ Struttura verificata'); render(); } else toast(errMsg(r));
+  };
 }
 
 //──────────────── EVENTI + prelazione BAD ────────────────
@@ -548,6 +561,7 @@ function contractCard(side, c){
   if(canSign) a.push('<button class="btn sm" data-act="sign" data-id="'+c.id+'">✍️ Firma</button>');
   if(side==='venue' && c.status==='active' && c.payment_status==='pending') a.push('<button class="btn sm g" data-act="fund" data-id="'+c.id+'">💳 Finanzia (escrow)</button>');
   if(side==='venue' && c.status==='active' && c.payment_status==='held') a.push('<button class="btn sm gold" data-act="complete" data-id="'+c.id+'">✅ Completa & paga</button>');
+  a.push('<button class="btn sm ghost" data-act="chat" data-id="'+c.id+'">💬 Chat & contatti</button>');
   if(c.status!=='completed' && c.status!=='cancelled') a.push('<button class="btn sm danger" data-act="cancel" data-id="'+c.id+'">Annulla</button>');
   var t=c.terms||{};
   return '<div class="card"><div class="hd"><div><b>'+esc(c.role)+'</b> <span class="muted">'+dt(c.date)+' · '+hhmm(c.start_time)+'–'+hhmm(c.end_time)+'</span></div><div class="row">'+statusPill(c.status)+payPill(c.payment_status)+'</div></div>'
@@ -566,6 +580,49 @@ function bindContractActions(reload){
   act('fund', function(id){return '/api/contracts/'+id+'/fund';}, '🔒 Pagamento in escrow');
   act('complete', function(id){return '/api/contracts/'+id+'/complete';}, '✅ Turno completato, worker pagato');
   act('cancel', function(id){return '/api/contracts/'+id+'/cancel';}, 'Contratto annullato');
+  document.querySelectorAll('[data-act="chat"]').forEach(function(b){ b.onclick=function(){ openChat(b.dataset.id); }; });
+}
+
+//──────────────── CHAT in-app + contatti (anti-disintermediazione) ────────────────
+async function openChat(cid){
+  var back=(session().role==='venue')?venueContracts:function(){render();};
+  var box=document.getElementById('tabbody');
+  box.innerHTML='<div class="card"><div class="hd"><div><b>💬 Conversazione</b></div>'
+    +'<button class="btn ghost sm" id="ch-back">← Contratti</button></div>'
+    +'<div class="muted" style="font-size:11.5px">🔒 Comunica e paga in piattaforma: i contatti diretti si sbloccano a contratto firmato. Numeri/email nei messaggi vengono rimossi.</div>'
+    +'<div id="ch-contact" style="margin-top:8px"></div>'
+    +'<div style="margin-top:8px"><button class="btn ghost sm" id="ch-show-contact">📇 Mostra contatti controparte</button></div>'
+    +'</div>'
+    +'<div id="ch-list" class="card" style="max-height:48vh;overflow-y:auto"><div class="empty">Carico…</div></div>'
+    +'<div class="card"><div class="row" style="gap:8px"><input id="ch-input" placeholder="Scrivi un messaggio…" style="flex:1"><button class="btn" id="ch-send">Invia</button></div></div>';
+  document.getElementById('ch-back').onclick=back;
+  document.getElementById('ch-show-contact').onclick=async function(){
+    var r=await api('/api/contracts/'+cid+'/contact');
+    var box2=document.getElementById('ch-contact');
+    if(!r.ok){ toast((r.status===403?'🔒 ':'')+errMsg(r)); return; }
+    var d=r.data||{};
+    box2.innerHTML='<div class="card" style="border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08);margin:0">'
+      +'<b>📇 '+esc(d.name||'')+'</b> <span class="muted">'+esc(d.city||'')+'</span><br>'
+      +(d.phone?'📞 '+esc(d.phone)+'<br>':'')+(d.email?'✉️ '+esc(d.email)+'<br>':'')+(d.address?'📍 '+esc(d.address):'')+'</div>';
+  };
+  async function load(){
+    var r=await api('/api/messages/'+cid); var list=document.getElementById('ch-list');
+    if(!r.ok){ list.innerHTML='<div class="err">'+esc(errMsg(r))+'</div>'; return; }
+    var rows=r.data||[];
+    list.innerHTML = rows.length? rows.map(function(m){
+      var mine=m.mine;
+      return '<div style="text-align:'+(mine?'right':'left')+';margin:6px 0"><span style="display:inline-block;max-width:80%;padding:7px 11px;border-radius:12px;background:'+(mine?'rgba(168,85,247,.18)':'var(--bg3)')+';border:1px solid var(--line);text-align:left">'+esc(m.body)+(m.flagged?' <span class="muted" title="contatti rimossi">🔒</span>':'')+'</span></div>';
+    }).join('') : '<div class="empty">Ancora nessun messaggio. Coordina qui il turno.</div>';
+    list.scrollTop=list.scrollHeight;
+  }
+  document.getElementById('ch-send').onclick=async function(){
+    var inp=document.getElementById('ch-input'); var v=(inp.value||'').trim(); if(!v) return;
+    var r=await api('/api/messages/'+cid,{method:'POST',body:JSON.stringify({body:v})});
+    if(r.ok){ inp.value=''; if(r.data&&r.data.flagged) toast('🔒 Contatti rimossi: resta in piattaforma'); load(); }
+    else toast(errMsg(r));
+  };
+  document.getElementById('ch-input').addEventListener('keydown',function(e){ if(e.key==='Enter'){ document.getElementById('ch-send').click(); } });
+  load();
 }
 
 render();
