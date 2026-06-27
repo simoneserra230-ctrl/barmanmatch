@@ -1,0 +1,41 @@
+# BarmanMatch — Render Blueprint (backend FastAPI)
+# Importa questo repo su Render come "Blueprint": creera' il web service.
+# Le env con sync:false vanno incollate a mano nel dashboard (sono segrete).
+services:
+  - type: web
+    name: barmanmatch-api
+    runtime: python
+    rootDir: BARMANMATCH_APP/backend
+    plan: free
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # ── Supabase (progetto barmanmatch) — SEGRETI ──
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY            # service_role (solo backend!)
+        sync: false
+      - key: SUPABASE_JWT_SECRET     # facoltativo: usato solo per token HS256 legacy
+        sync: false
+      # ── App config ──
+      - key: FRONTEND_ORIGIN         # es. https://barmanmatch.vercel.app (CSV se piu' origini)
+        sync: false
+      - key: BMM_PUBLIC_URL          # URL pubblico app (redirect Stripe), es. https://barmanmatch.vercel.app
+        sync: false
+      - key: BMM_ADMIN_EMAILS        # email admin (bypass + pannello)
+        sync: false
+      - key: BMM_TRIAL_DAYS
+        value: "14"
+      - key: PLATFORM_FEE_PCT
+        value: "0.12"
+      - key: EVENT_PRIORITY_HOURS
+        value: "24"
+      # ── Stripe (dopo) — SEGRETI ──
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
