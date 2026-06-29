@@ -3,23 +3,234 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BarmanMatch — Network Barman Italia · Skills Solutions</title>
-<meta name="description" content="BarmanMatch: la piattaforma di matching tra barman professionisti e locali/eventi. Portfolio, credenziali, booking rapido. In arrivo 2026.">
-<meta http-equiv="refresh" content="0; url=barman_network.html">
-<link rel="canonical" href="barman_network.html">
+<title>BarmanMatch — Il match tra professionisti ed eventi · SkillSolutions</title>
+<meta name="description" content="BarmanMatch: la piattaforma che connette barman, staff di sala e di cucina con locali ed eventi. Matching AI, portfolio e rating verificati, pagamenti garantiti. Dalla Sardegna all'Italia.">
+<meta property="og:title" content="BarmanMatch — Lo staff giusto, al momento giusto">
+<meta property="og:description" content="Marketplace HoReCa: professionisti ↔ eventi. Matching AI, rating verificati, pagamenti garantiti.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A4%9D%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+:root{
+  --g:#C9A84C;--gl:#F0D78A;--gd:#6B4F0A;
+  --bg:#06060A;--bg2:#0C0A09;--bg3:#13100B;
+  --w:#F8F4EE;--w2:rgba(248,244,238,.55);--w3:rgba(248,244,238,.32);
+  --line:rgba(201,168,76,.10);--line2:rgba(201,168,76,.22);
+  --r:14px;--rl:22px;--rpill:999px;
+  --serif:'Playfair Display',serif;--head:'Syne',sans-serif;--font:'DM Sans',sans-serif;
+}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#06060A;color:#F8F4EE;font-family:'DM Sans',system-ui,sans-serif;display:grid;place-items:center;min-height:100dvh;text-align:center;padding:2rem;}
-.logo{font-size:3rem;margin-bottom:1rem;}
-h1{font-size:1.4rem;color:#C9A84C;margin-bottom:.5rem;}
-p{font-size:.85rem;color:rgba(248,244,238,.4);margin-bottom:1.5rem;}
-a{display:inline-block;padding:.8rem 2rem;background:#C9A84C;color:#000;font-size:.65rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;border-radius:999px;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--w);font-family:var(--font);overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.5;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+a{text-decoration:none;color:inherit;}
+::selection{background:rgba(201,168,76,.25);color:var(--gl);}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:1.1rem 2.5rem;display:flex;justify-content:space-between;align-items:center;background:rgba(6,5,7,.7);backdrop-filter:blur(22px);border-bottom:1px solid var(--line);}
+.nav-brand{font-family:var(--serif);font-size:1.15rem;color:var(--g);letter-spacing:.03em;display:flex;align-items:center;gap:.5rem;}
+.nav-brand b{font-weight:900;}
+.nav-cta{display:inline-flex;align-items:center;gap:.5rem;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;padding:.5rem 1.15rem;background:var(--g);color:#000;font-weight:700;border-radius:var(--rpill);transition:.3s;}
+.nav-cta:hover{background:var(--gl);transform:translateY(-1px);}
+@media(max-width:560px){nav{padding:.85rem 1.2rem;}.nav-brand{font-size:1rem;}}
+
+.hero{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:7rem 2.5rem 4rem;position:relative;overflow:hidden;max-width:1240px;margin:0 auto;}
+.hero-bg{position:absolute;inset:0;z-index:-2;background-size:cover;background-position:center;opacity:.5;}
+.hero-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,5,7,.50) 0%,rgba(6,5,7,.80) 55%,var(--bg) 100%);}
+.hero-tag{font-size:.56rem;letter-spacing:.4em;color:rgba(201,168,76,.75);text-transform:uppercase;margin-bottom:1.8rem;display:inline-flex;align-items:center;gap:.6rem;}
+.hero-tag::before{content:'';width:30px;height:1px;background:var(--g);}
+.hero-h1{font-family:var(--serif);font-size:clamp(3rem,9vw,7rem);font-weight:900;line-height:.92;letter-spacing:-.01em;margin-bottom:1.5rem;max-width:15ch;}
+.hero-h1 em{font-style:italic;color:var(--g);}
+.hero-sub{font-size:1rem;color:var(--w2);line-height:1.85;max-width:540px;margin-bottom:2.4rem;}
+.hero-sub b{color:var(--w);font-weight:600;}
+.hero-btns{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center;}
+.btn-g{display:inline-flex;align-items:center;gap:.5rem;padding:.95rem 2rem;background:var(--g);color:#000;font-size:.68rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;border-radius:var(--rpill);transition:.3s;}
+.btn-g:hover{background:var(--gl);transform:translateY(-2px);box-shadow:0 14px 34px rgba(201,168,76,.28);}
+.btn-o{display:inline-flex;align-items:center;gap:.5rem;padding:.95rem 1.8rem;border:1px solid var(--line2);color:var(--g);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;border-radius:var(--rpill);transition:.3s;}
+.btn-o:hover{background:rgba(201,168,76,.07);border-color:var(--g);}
+.hero-meta{display:flex;gap:2.2rem;margin-top:3rem;flex-wrap:wrap;}
+.hero-meta .n{font-family:var(--head);font-size:1.7rem;font-weight:800;color:var(--g);line-height:1;}
+.hero-meta .l{font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;color:var(--w3);}
+
+.sec{padding:5rem 2.5rem;max-width:1240px;margin:0 auto;}
+.sec-label{font-size:.54rem;letter-spacing:.38em;color:var(--g);text-transform:uppercase;margin-bottom:.9rem;display:flex;align-items:center;gap:.6rem;}
+.sec-label::before{content:'✦';}
+.sec-h2{font-family:var(--serif);font-size:clamp(1.9rem,4.6vw,3.4rem);font-weight:700;line-height:1.05;margin-bottom:2.4rem;letter-spacing:-.01em;}
+.sec-h2 em{font-style:italic;color:var(--g);}
+
+/* due pubblici */
+.aud{display:grid;grid-template-columns:1fr 1fr;gap:1.3rem;}
+@media(max-width:760px){.aud{grid-template-columns:1fr;}}
+.aud-card{position:relative;border:1px solid var(--line);border-radius:var(--rl);overflow:hidden;background:var(--bg2);transition:.4s;}
+.aud-card:hover{transform:translateY(-5px);border-color:var(--line2);box-shadow:0 22px 48px rgba(0,0,0,.5);}
+.aud-img{height:190px;background-size:cover;background-position:center;position:relative;}
+.aud-img::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,5,7,.15),rgba(12,10,9,.92));}
+.aud-body{padding:1.8rem 1.9rem 2rem;margin-top:-3rem;position:relative;}
+.aud-kick{font-size:.5rem;letter-spacing:.24em;text-transform:uppercase;color:var(--g);}
+.aud-name{font-family:var(--serif);font-size:1.7rem;font-weight:700;color:var(--gl);margin:.3rem 0 .8rem;}
+.aud-list{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.6rem;}
+.aud-li{display:flex;gap:.6rem;font-size:.84rem;color:var(--w2);line-height:1.5;}
+.aud-li i{color:var(--g);font-style:normal;}
+
+/* features */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:1.4rem;}
+@media(max-width:760px){.feat-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.feat-grid{grid-template-columns:1fr;}}
+.feat{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:1.6rem;transition:.3s;}
+.feat:hover{border-color:var(--line2);transform:translateY(-3px);}
+.feat-ico{font-size:1.5rem;margin-bottom:.7rem;}
+.feat-t{font-family:var(--head);font-size:.92rem;font-weight:700;color:var(--gl);margin-bottom:.35rem;}
+.feat-d{font-size:.78rem;color:var(--w2);line-height:1.7;}
+
+/* how */
+.how-flow{display:flex;align-items:stretch;gap:.7rem;flex-wrap:wrap;margin-top:1.4rem;}
+.how-step{flex:1;min-width:180px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:1.5rem 1.4rem;}
+.how-n{font-family:var(--head);font-size:1.4rem;font-weight:800;color:rgba(201,168,76,.32);line-height:1;margin-bottom:.5rem;}
+.how-t{font-family:var(--serif);font-size:1.05rem;color:var(--gl);font-weight:700;margin-bottom:.35rem;}
+.how-d{font-size:.76rem;color:var(--w3);line-height:1.6;}
+.how-arr{display:flex;align-items:center;color:rgba(201,168,76,.45);font-size:1.3rem;}
+@media(max-width:780px){.how-flow{flex-direction:column;}.how-arr{transform:rotate(90deg);}}
+
+.cta{border-top:1px solid var(--line);text-align:center;}
+.cta h2{font-family:var(--serif);font-size:clamp(2rem,5vw,3.4rem);font-weight:700;margin-bottom:1rem;}
+.cta h2 em{font-style:italic;color:var(--g);}
+.cta p{font-size:.88rem;color:var(--w2);line-height:1.9;margin-bottom:2.2rem;max-width:560px;margin-left:auto;margin-right:auto;}
+.cta-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+.btn-wa{display:inline-flex;align-items:center;gap:.6rem;padding:1rem 2.2rem;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-size:.68rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;border-radius:var(--rpill);transition:.3s;}
+.btn-wa:hover{transform:translateY(-2px);box-shadow:0 16px 35px rgba(37,211,102,.25);}
+
+footer{padding:2.6rem 2.5rem;border-top:1px solid var(--line);}
+.foot-in{max-width:1240px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
+.foot-brand{font-family:var(--serif);font-size:1.05rem;color:rgba(201,168,76,.65);}
+.foot-links{display:flex;gap:1.4rem;list-style:none;flex-wrap:wrap;}
+.foot-links a{font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;color:var(--w3);transition:.3s;}
+.foot-links a:hover{color:var(--g);}
+.foot-copy{font-size:.52rem;color:rgba(248,244,238,.22);width:100%;}
+.rv{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+.rv.in{opacity:1;transform:none;}
 </style>
 </head>
 <body>
-<div class="logo">📱</div>
-<h1>BarmanMatch</h1>
-<p>Caricamento in corso…</p>
-<a href="barman_network.html">Vai al network →</a>
+
+<nav>
+  <a href="index.html" class="nav-brand">🤝 Barman<b>Match</b></a>
+  <a href="barman_network.html" class="nav-cta">Entra nel network →</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-bg" style="background-image:url('https://images.unsplash.com/photo-1572116469696-31de0f17cc34?auto=format&fit=crop&w=1920&q=90')"></div>
+  <div class="hero-tag">Marketplace HoReCa · Sardegna → Italia</div>
+  <h1 class="hero-h1">Lo staff giusto.<br><em>Al momento giusto.</em></h1>
+  <p class="hero-sub">BarmanMatch connette <b>barman, staff di sala e di cucina</b> con <b>locali, matrimoni ed eventi aziendali</b>. Un algoritmo di matching valuta ruolo, skill, zona e reattività — e propone le persone giuste in pochi secondi. Costruito da chi sta dietro al banco da 15 anni.</p>
+  <div class="hero-btns">
+    <a href="https://wa.me/393468473144?text=Ciao! Cerco staff per un evento tramite BarmanMatch." target="_blank" rel="noopener noreferrer" class="btn-g">Cerca staff per un evento →</a>
+    <a href="barman_network.html" class="btn-o">Sei un professionista? Entra nel network</a>
+  </div>
+  <div class="hero-meta">
+    <div><span class="n">2</span><span class="l">Lati: pro & eventi</span></div>
+    <div><span class="n">AI</span><span class="l">Matching per evento</span></div>
+    <div><span class="n">15+</span><span class="l">Anni dietro al banco</span></div>
+  </div>
+</header>
+
+<!-- DUE PUBBLICI -->
+<section class="sec" id="pubblici">
+  <div class="sec-label">Due lati, un solo match</div>
+  <h2 class="sec-h2">Per chi organizza,<br><em>e per chi lavora.</em></h2>
+  <div class="aud">
+    <div class="aud-card rv">
+      <div class="aud-img" style="background-image:url('https://images.unsplash.com/photo-1540555700478-4be290a2d429?auto=format&fit=crop&w=900&q=85')"></div>
+      <div class="aud-body">
+        <div class="aud-kick">Per locali & eventi</div>
+        <div class="aud-name">Trova lo staff in secondi</div>
+        <div class="aud-list">
+          <div class="aud-li"><i>◆</i> Pubblichi l'evento: ruolo, data, zona, numero di coperti</div>
+          <div class="aud-li"><i>◆</i> Ricevi i profili più pertinenti con score di match</div>
+          <div class="aud-li"><i>◆</i> Credenziali e rating verificati, contratto e pagamento gestiti</div>
+          <div class="aud-li"><i>◆</i> Sostituzioni d'emergenza (SOS staff) quando salta qualcuno</div>
+        </div>
+        <a href="https://wa.me/393468473144?text=Ciao! Vorrei staff per un evento tramite BarmanMatch." target="_blank" rel="noopener noreferrer" class="btn-g">Richiedi staff →</a>
+      </div>
+    </div>
+    <div class="aud-card rv">
+      <div class="aud-img" style="background-image:url('https://images.unsplash.com/photo-1534430480872-3498386e7856?auto=format&fit=crop&w=900&q=85')"></div>
+      <div class="aud-body">
+        <div class="aud-kick">Per i professionisti</div>
+        <div class="aud-name">Lavora agli eventi giusti</div>
+        <div class="aud-list">
+          <div class="aud-li"><i>◆</i> Crei il tuo portfolio: esperienze, skill, disponibilità, zona</div>
+          <div class="aud-li"><i>◆</i> Ricevi proposte coerenti col tuo profilo, niente perdite di tempo</div>
+          <div class="aud-li"><i>◆</i> Pagamenti garantiti e recensioni che fanno crescere il tuo rating</div>
+          <div class="aud-li"><i>◆</i> Prelazione sugli eventi <b>BAD</b> se sei iscritto alla piattaforma</div>
+        </div>
+        <a href="barman_network.html" class="btn-o">Crea il tuo profilo →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec" style="padding-top:1rem;">
+  <div class="sec-label">Come ti protegge</div>
+  <h2 class="sec-h2">Fiducia, non solo <em>contatti.</em></h2>
+  <div class="feat-grid">
+    <div class="feat rv"><div class="feat-ico">🎯</div><div class="feat-t">Matching AI</div><div class="feat-d">Ruolo, skill, disponibilità e zona valutati per ogni evento.</div></div>
+    <div class="feat rv"><div class="feat-ico">🛡️</div><div class="feat-t">KYC & credenziali</div><div class="feat-d">Identità e qualifiche verificate, su entrambi i lati.</div></div>
+    <div class="feat rv"><div class="feat-ico">💳</div><div class="feat-t">Pagamenti garantiti</div><div class="feat-d">Compenso protetto fino a evento concluso (escrow).</div></div>
+    <div class="feat rv"><div class="feat-ico">⭐</div><div class="feat-t">Rating verificati</div><div class="feat-d">Recensioni reali post-evento: la reputazione conta.</div></div>
+    <div class="feat rv"><div class="feat-ico">💬</div><div class="feat-t">Chat in-app</div><div class="feat-d">Vi coordinate dentro la piattaforma, in sicurezza.</div></div>
+    <div class="feat rv"><div class="feat-ico">🥂</div><div class="feat-t">Eventi BAD</div><div class="feat-d">Gli eventi BAD attingono qui: prelazione agli iscritti.</div></div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="sec" style="padding-top:1rem;">
+  <div class="sec-label">Come funziona</div>
+  <h2 class="sec-h2">Dal bisogno al match,<br><em>in tre passi.</em></h2>
+  <div class="how-flow">
+    <div class="how-step rv"><div class="how-n">01</div><div class="how-t">Pubblica o candidati</div><div class="how-d">Il locale pubblica l'evento; il professionista crea il profilo.</div></div>
+    <div class="how-arr">→</div>
+    <div class="how-step rv"><div class="how-n">02</div><div class="how-t">Il match AI propone</div><div class="how-d">L'algoritmo incrocia esigenze e profili e ordina per pertinenza.</div></div>
+    <div class="how-arr">→</div>
+    <div class="how-step rv"><div class="how-n">03</div><div class="how-t">Conferma in sicurezza</div><div class="how-d">Contratto, chat e pagamento garantito dentro la piattaforma.</div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="sec cta" id="contatto">
+  <div class="sec-label" style="justify-content:center;">Inizia ora</div>
+  <h2>Pronto a trovare<br><em>il match giusto?</em></h2>
+  <p>Hai un evento e ti serve staff, o sei un professionista che vuole lavorare agli eventi giusti? Scrivici: rispondiamo entro poche ore.</p>
+  <div class="cta-btns">
+    <a href="https://wa.me/393468473144?text=Ciao! Vorrei usare BarmanMatch." target="_blank" rel="noopener noreferrer" class="btn-wa">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      WhatsApp
+    </a>
+    <a href="barman_network.html" class="btn-o">Esplora il network →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-in">
+    <div class="foot-brand">🤝 BarmanMatch</div>
+    <ul class="foot-links">
+      <li><a href="../SKILLSOLUTIONS.COM/index.html">✦ SkillSolutions Hub</a></li>
+      <li><a href="barman_network.html">Network</a></li>
+      <li><a href="../BAD.SKILLSOLUTIONS.COM/index.html">BAD Eventi</a></li>
+      <li><a href="../BAD360.SKILLSOLUTIONS.COM/index.html">BAD360</a></li>
+    </ul>
+    <div class="foot-copy">© 2025-2026 BarmanMatch · SkillSolutions · Simone Serra · Sardegna · Italia</div>
+  </div>
+</footer>
+
+<script>
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target);}});},{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'});}});});
+</script>
+<script src="../SKILLSOLUTIONS.COM/ss-nav.js"></script>
+<script>try{SSNav.init({current:'barmanmatch'});}catch(e){}</script>
 </body>
 </html>
