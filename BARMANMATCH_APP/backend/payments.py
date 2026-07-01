@@ -25,6 +25,7 @@ except Exception:
 
 STRIPE_SECRET = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_PRICE_VENUE = os.environ.get("STRIPE_PRICE_VENUE", "")   # price_... del piano struttura (subscription)
 PUBLIC_URL = (os.environ.get("BMM_PUBLIC_URL")
               or os.environ.get("FRONTEND_ORIGIN", "http://localhost:5500").split(",")[0]).rstrip("/")
 
@@ -66,6 +67,39 @@ def account_ready(acct: str) -> bool:
     try:
         a = _s().Account.retrieve(acct)
         return bool(getattr(a, "payouts_enabled", False))
+    except Exception:
+        return False
+
+
+# ── Subscription della STRUTTURA (venue paga) ────────────────────
+def subscription_ready() -> bool:
+    return enabled() and bool(STRIPE_PRICE_VENUE)
+
+
+def create_subscription_checkout(venue_id: str, email: str = "") -> str:
+    """Checkout Session in modalità subscription per la struttura. Ritorna l'URL Stripe.
+    Il venue_id viaggia in metadata → il webhook attiva l'entitlement. Nessun pagamento fuori piattaforma."""
+    if not STRIPE_PRICE_VENUE:
+        raise RuntimeError("STRIPE_PRICE_VENUE non configurato")
+    s = _s()
+    sess = s.checkout.Session.create(
+        mode="subscription",
+        line_items=[{"price": STRIPE_PRICE_VENUE, "quantity": 1}],
+        customer_email=email or None,
+        client_reference_id=venue_id,
+        metadata={"venue_id": venue_id},
+        subscription_data={"metadata": {"venue_id": venue_id}},
+        success_url=PUBLIC_URL + "/app.html#venue",
+        cancel_url=PUBLIC_URL + "/app.html#venue",
+    )
+    return sess.url
+
+
+def cancel_subscription(subscription_id: str) -> bool:
+    """Disdice una subscription (a fine periodo). Usato per la revoca lato piattaforma."""
+    try:
+        _s().Subscription.modify(subscription_id, cancel_at_period_end=True)
+        return True
     except Exception:
         return False
 

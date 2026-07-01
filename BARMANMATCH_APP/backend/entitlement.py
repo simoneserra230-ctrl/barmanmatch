@@ -102,6 +102,51 @@ def entitlement_state(db, venue_id: str) -> dict:
     }
 
 
+# ── Attivazione/disattivazione da Stripe subscription (webhook) ──
+def activate_subscription(db, venue_id: str, subscription_id: str = "", current_period_end=None, plan: str = "pro"):
+    """Il webhook Stripe attiva la struttura. current_period_end (iso) opzionale."""
+    _ensure_row(db, venue_id)
+    updates = {"plan": plan, "status": "active", "updated_at": _now().isoformat()}
+    if current_period_end:
+        updates["current_period_end"] = current_period_end
+    db.table("venue_entitlements").update(updates).eq("venue_id", venue_id).execute()
+
+
+def deactivate_subscription(db, venue_id: str, status: str = "cancelled"):
+    _ensure_row(db, venue_id)
+    db.table("venue_entitlements").update(
+        {"status": status, "plan": "none", "updated_at": _now().isoformat()}
+    ).eq("venue_id", venue_id).execute()
+
+
+def handle_subscription_event(db, event) -> bool:
+    """Applica un evento Stripe di subscription all'entitlement della venue.
+    Il venue_id viaggia in metadata (impostato in create_subscription_checkout). Ritorna True se gestito."""
+    t = event.get("type", "")
+    obj = (event.get("data") or {}).get("object") or {}
+    venue_id = (obj.get("metadata") or {}).get("venue_id")
+    if not venue_id:
+        return False
+    if t == "checkout.session.completed" and obj.get("mode") == "subscription":
+        activate_subscription(db, venue_id, obj.get("subscription") or "")
+        return True
+    if t in ("customer.subscription.created", "customer.subscription.updated"):
+        status = obj.get("status")
+        cpe = obj.get("current_period_end")
+        iso = datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat() if cpe else None
+        if status in ("active", "trialing"):
+            activate_subscription(db, venue_id, obj.get("id") or "", iso)
+        elif status in ("canceled", "unpaid", "incomplete_expired"):
+            deactivate_subscription(db, venue_id, "cancelled")
+        elif status == "past_due":
+            deactivate_subscription(db, venue_id, "past_due")
+        return True
+    if t == "customer.subscription.deleted":
+        deactivate_subscription(db, venue_id, "cancelled")
+        return True
+    return False
+
+
 # ── Dependency: azione riservata a struttura con abbonamento attivo ──
 def require_active_venue(user: dict = Depends(get_current_user)) -> str:
     """Ritorna l'uid se: admin (bypass) OPPURE struttura con entitlement attivo.

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from database import get_db
 from auth_middleware import require_uid
 import payments
+import entitlement
 
 router = APIRouter()
 
@@ -41,13 +42,19 @@ async def webhook(request: Request):
         event = payments.parse_webhook(payload, sig)
     except Exception as e:
         raise HTTPException(400, f"Webhook non valido: {e}")
-    if event.get("type") == "checkout.session.completed":
-        obj = event["data"]["object"]
-        cid = (obj.get("metadata") or {}).get("contract_id")
-        if cid:
-            get_db().table("contracts").update({
-                "payment_status": "held",
-                "payment_funded_at": datetime.utcnow().isoformat(),
-                "stripe_payment_intent_id": obj.get("payment_intent"),
-            }).eq("id", cid).execute()
-    return {"ok": True}
+    db = get_db()
+    etype = event.get("type", "")
+    obj = (event.get("data") or {}).get("object") or {}
+    meta = obj.get("metadata") or {}
+    # 1) ESCROW contratto (fund) — pagamento singolo con contract_id
+    if etype == "checkout.session.completed" and meta.get("contract_id"):
+        db.table("contracts").update({
+            "payment_status": "held",
+            "payment_funded_at": datetime.utcnow().isoformat(),
+            "stripe_payment_intent_id": obj.get("payment_intent"),
+        }).eq("id", meta["contract_id"]).execute()
+        return {"ok": True, "handled": "escrow"}
+    # 2) SUBSCRIPTION struttura — attiva/revoca entitlement (venue_id in metadata)
+    if entitlement.handle_subscription_event(db, event):
+        return {"ok": True, "handled": "subscription"}
+    return {"ok": True, "handled": None}

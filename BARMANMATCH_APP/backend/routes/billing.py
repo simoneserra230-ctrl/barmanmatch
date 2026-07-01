@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from database import get_db
 from auth_middleware import get_current_user
 import entitlement
+import payments
 
 router = APIRouter()
 
@@ -50,13 +51,29 @@ def my_status(user: dict = Depends(get_current_user)):
     return st
 
 
-# ── Acquisto abbonamento (Stripe: arrivera' dopo) ────────────────
+# ── Acquisto abbonamento (Stripe subscription) ───────────────────
 @router.post("/checkout")
 def checkout(user: dict = Depends(get_current_user)):
-    raise HTTPException(
-        status_code=501,
-        detail="Pagamento abbonamento non ancora attivo. Contatta l'amministratore per l'attivazione.",
-    )
+    """Avvia il checkout di abbonamento per la STRUTTURA. Ritorna l'URL Stripe.
+    Worker = gratis (400); admin = bypass (400); Stripe non configurato = 501 (usa lo sblocco admin)."""
+    if entitlement.is_admin(user):
+        raise HTTPException(400, "Gli amministratori non necessitano di abbonamento")
+    uid = user.get("sub")
+    db = get_db()
+    venue = db.table("venue_profiles").select("id, email, name").eq("id", uid).execute().data
+    if not venue:
+        raise HTTPException(403, "Solo le strutture (venue) sottoscrivono l'abbonamento; i lavoratori usano l'app gratis")
+    if not payments.subscription_ready():
+        raise HTTPException(
+            status_code=501,
+            detail="Pagamento abbonamento non ancora attivo (Stripe/price non configurati). "
+                   "Contatta l'amministratore per lo sblocco.",
+        )
+    try:
+        url = payments.create_subscription_checkout(uid, (venue[0].get("email") or ""))
+    except Exception as e:
+        raise HTTPException(502, f"Stripe non disponibile: {e}")
+    return {"url": url}
 
 
 # ── ADMIN ────────────────────────────────────────────────────────
